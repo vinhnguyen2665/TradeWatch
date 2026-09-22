@@ -30,7 +30,7 @@ class GeminiAdvisorService:
         "gemini-flash-latest",
     ]
 
-    def __init__(self, default_model: str = "gemini-3.5-flash", timeout_sec: float = 180.0):
+    def __init__(self, default_model: str = "gemini-3.5-flash", timeout_sec: Optional[float] = None):
         self.default_model = default_model
         self.timeout = timeout_sec
         self._cached_models: List[Dict[str, Any]] = []
@@ -265,7 +265,7 @@ Hãy trả về JSON với cấu trúc chính xác sau (Bắt buộc phân bổ 
         }
 
         last_err_msg = ""
-        client_timeout = httpx.Timeout(self.timeout, connect=20.0)
+        client_timeout = httpx.Timeout(self.timeout, connect=60.0) if self.timeout else httpx.Timeout(None)
         async with httpx.AsyncClient(timeout=client_timeout) as client:
             for current_m in candidate_models:
                 url = f"{GEMINI_API_BASE_URL}/{current_m}:generateContent?key={clean_key}"

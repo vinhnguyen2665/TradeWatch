@@ -133,7 +133,7 @@ export const getScreenerSuggestions = async (): Promise<ScreenerSignal[]> => {
 // --- AI Portfolio Allocation APIs ---
 export const generateAllocation = async (data: PortfolioAllocationRequest): Promise<PortfolioAllocationRecord> => {
   const res = await api.post<PortfolioAllocationRecord>('/allocation/generate', data, {
-    timeout: 180000, // 180 giây cho các mô hình AI phân tích sâu
+    timeout: 0, // Không giới hạn timeout (đợi đến khi AI phản hồi thì thôi)
   });
   return res.data;
 };

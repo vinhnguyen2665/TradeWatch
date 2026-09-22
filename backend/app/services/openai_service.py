@@ -20,7 +20,7 @@ class OpenAIAdvisorService:
     Toàn bộ danh sách model được đồng bộ trực tiếp từ Provider API (không hardcode).
     """
 
-    def __init__(self, timeout_sec: float = 180.0):
+    def __init__(self, timeout_sec: Optional[float] = None):
         self.timeout = timeout_sec
 
     async def list_available_models(
@@ -286,7 +286,7 @@ Yêu cầu trả về đúng cấu trúc JSON sau:
         if is_openai_official:
             payload["response_format"] = {"type": "json_object"}
 
-        timeout_obj = httpx.Timeout(self.timeout, connect=25.0)
+        timeout_obj = httpx.Timeout(self.timeout, connect=60.0) if self.timeout else httpx.Timeout(None)
 
         async with httpx.AsyncClient(timeout=timeout_obj) as client:
             url = f"{clean_base}/chat/completions"
