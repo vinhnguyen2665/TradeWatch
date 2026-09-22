@@ -1,6 +1,8 @@
 # 📈 TradeWatch - Hệ Thống Giám Sát Chứng Khoán & Cảnh Báo Telegram
 
-Hệ thống giám sát danh mục cổ phiếu Việt Nam (HOSE, HNX) thời gian thực, tự động thu thập biến động giá, lưu trữ chuỗi thời gian tối ưu, phân tích chỉ báo kỹ thuật phát hiện điểm nổ (Screener) và gửi cảnh báo Take-Profit / Stop-Loss qua Telegram chống spam.
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+Hệ thống giám sát danh mục cổ phiếu Việt Nam (HOSE, HNX, UPCoM) thời gian thực, tự động thu thập biến động giá, lưu trữ chuỗi thời gian tối ưu, phân tích chỉ báo kỹ thuật phát hiện điểm nổ (Screener) và gửi cảnh báo Take-Profit / Stop-Loss qua Telegram chống spam.
 
 ---
 
@@ -115,3 +117,10 @@ Frontend sẽ khởi chạy tại: `http://localhost:3000`
 1. Mở ứng dụng Telegram, tìm `@BotFather` và gửi `/newbot` để tạo bot mới và lấy **Bot Token**.
 2. Gửi bất kỳ tin nhắn nào tới bot của bạn, sau đó truy cập `https://api.telegram.org/bot<TOKEN>/getUpdates` hoặc chat với `@userinfobot` để lấy **Chat ID**.
 3. Mở giao diện TradeWatch -> Nhấn nút **Cài đặt** -> Điền Bot Token & Chat ID -> Nhấn **Gửi Tin Nhắn Cảnh Báo Thử Nghiệm**.
+
+---
+
+## 📜 Giấy Phép (License)
+
+Dự án này được phát hành theo giấy phép **GNU Affero General Public License v3.0 (GNU AGPLv3)**. Chi tiết vui lòng xem tại tập tin [LICENSE](file:///home/vinhn/0_PROJECTS/TradeWatch/LICENSE).
+
