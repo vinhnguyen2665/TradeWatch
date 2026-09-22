@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models import SystemSetting
+from app.models import SystemSetting, User
+from app.auth import get_current_admin_user
 from app.schemas import (
     SystemSettingsOut,
     SystemSettingsUpdate,
@@ -37,8 +38,11 @@ async def _get_or_create_setting(db: AsyncSession, key: str, default: str) -> st
 
 
 @router.get("", response_model=SystemSettingsOut)
-async def get_settings(db: AsyncSession = Depends(get_db)):
-    """Lấy toàn bộ thông số cấu hình hệ thống hiện tại."""
+async def get_settings(
+    current_admin: User = Depends(get_current_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy toàn bộ thông số cấu hình hệ thống hiện tại (Dành riêng cho Quản Trị Viên)."""
     interval_val = await _get_or_create_setting(db, "polling_interval_sec", "30")
     bot_status_val = await _get_or_create_setting(db, "bot_status", "RUNNING")
     cooldown_val = await _get_or_create_setting(db, "alert_cooldown_min", "15")
@@ -62,6 +66,7 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=SystemSettingsOut)
 async def update_settings(
     payload: SystemSettingsUpdate,
+    current_admin: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -138,12 +143,13 @@ async def update_settings(
     await db.commit()
 
     # Trả về cấu hình mới
-    return await get_settings(db)
+    return await get_settings(current_admin=current_admin, db=db)
 
 
 @router.post("/test-telegram")
 async def test_telegram_connection(
     payload: TelegramTestRequest,
+    current_admin: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Gửi tin nhắn thử nghiệm tới Telegram để kiểm tra Token và Chat ID."""

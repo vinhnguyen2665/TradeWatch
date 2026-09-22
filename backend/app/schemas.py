@@ -56,6 +56,7 @@ class UserOut(BaseModel):
     username: str
     email: str
     full_name: Optional[str] = None
+    role: str = "user"
     telegram_chat_id: Optional[str] = None
     created_at: datetime
 
@@ -67,6 +68,70 @@ class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+# --- Admin Management Schemas ---
+class UserAdminItem(BaseModel):
+    id: int
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    role: str = "user"
+    telegram_chat_id: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    positions_count: int = 0
+    alerts_count: int = 0
+    ai_provider: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserGrowthPoint(BaseModel):
+    date: str
+    users_count: int
+
+
+class TopActiveUser(BaseModel):
+    id: int
+    username: str
+    full_name: Optional[str] = None
+    role: str
+    positions_count: int
+    alerts_count: int
+
+
+class UserAdminStats(BaseModel):
+    total_users: int
+    total_admins: int
+    total_regular_users: int
+    total_positions_tracked: int
+    total_alerts_sent: int
+    user_growth: List[UserGrowthPoint] = []
+    top_users: List[TopActiveUser] = []
+
+
+class UserAdminCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=100)
+    full_name: Optional[str] = Field(None, max_length=255)
+    role: str = Field(default="user", pattern="^(admin|user)$")
+    telegram_chat_id: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class UserAdminUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    role: Optional[str] = Field(None, pattern="^(admin|user)$")
+    telegram_chat_id: Optional[str] = Field(None, max_length=100)
+    password: Optional[str] = Field(None, min_length=6, max_length=100)
 
 
 # --- Portfolio Position Schemas ---

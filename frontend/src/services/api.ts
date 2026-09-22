@@ -15,6 +15,10 @@ import {
   PortfolioAllocationRecord,
   GeminiModelInfo,
   UserAIConfig,
+  UserAdminItem,
+  UserAdminStats,
+  AdminCreateUserData,
+  AdminUpdateUserData,
 } from '../types';
 
 const api = axios.create({
@@ -190,5 +194,32 @@ export const applyAllocationToPortfolio = async (positions: Array<{
   return res.data;
 };
 
+// --- Admin Management & Statistics APIs ---
+export const getAdminStats = async (): Promise<UserAdminStats> => {
+  const res = await api.get<UserAdminStats>('/admin/stats');
+  return res.data;
+};
+
+export const getAdminUsers = async (params?: { q?: string; role?: string }): Promise<UserAdminItem[]> => {
+  const res = await api.get<UserAdminItem[]>('/admin/users', { params });
+  return res.data;
+};
+
+export const createAdminUser = async (data: AdminCreateUserData): Promise<UserAdminItem> => {
+  const res = await api.post<UserAdminItem>('/admin/users', data);
+  return res.data;
+};
+
+export const updateAdminUser = async (userId: number, data: AdminUpdateUserData): Promise<UserAdminItem> => {
+  const res = await api.put<UserAdminItem>(`/admin/users/${userId}`, data);
+  return res.data;
+};
+
+export const deleteAdminUser = async (userId: number): Promise<{ success: boolean; message: string }> => {
+  const res = await api.delete(`/admin/users/${userId}`);
+  return res.data;
+};
+
 export default api;
+
 

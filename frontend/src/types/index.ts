@@ -3,8 +3,64 @@ export interface User {
   username: string;
   email: string;
   full_name?: string;
+  role: 'admin' | 'user';
   telegram_chat_id?: string;
   created_at: string;
+}
+
+export interface UserAdminItem {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: 'admin' | 'user';
+  telegram_chat_id?: string;
+  created_at: string;
+  updated_at?: string;
+  positions_count: number;
+  alerts_count: number;
+  ai_provider?: string;
+}
+
+export interface UserGrowthPoint {
+  date: string;
+  users_count: number;
+}
+
+export interface TopActiveUser {
+  id: number;
+  username: string;
+  full_name?: string;
+  role: string;
+  positions_count: number;
+  alerts_count: number;
+}
+
+export interface UserAdminStats {
+  total_users: number;
+  total_admins: number;
+  total_regular_users: number;
+  total_positions_tracked: number;
+  total_alerts_sent: number;
+  user_growth: UserGrowthPoint[];
+  top_users: TopActiveUser[];
+}
+
+export interface AdminCreateUserData {
+  username: string;
+  email: string;
+  password: string;
+  full_name?: string;
+  role: 'admin' | 'user';
+  telegram_chat_id?: string;
+}
+
+export interface AdminUpdateUserData {
+  full_name?: string;
+  email?: string;
+  role?: 'admin' | 'user';
+  telegram_chat_id?: string;
+  password?: string;
 }
 
 export interface AuthResponse {

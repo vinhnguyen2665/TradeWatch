@@ -55,7 +55,7 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_user)
 
-    token = create_access_token(subject=new_user.id, extra_data={"username": new_user.username})
+    token = create_access_token(subject=new_user.id, extra_data={"username": new_user.username, "role": new_user.role})
     return TokenOut(access_token=token, token_type="bearer", user=UserOut.model_validate(new_user))
 
 
@@ -73,7 +73,7 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
             detail="Tên đăng nhập hoặc mật khẩu không chính xác.",
         )
 
-    token = create_access_token(subject=user.id, extra_data={"username": user.username})
+    token = create_access_token(subject=user.id, extra_data={"username": user.username, "role": user.role})
     return TokenOut(access_token=token, token_type="bearer", user=UserOut.model_validate(user))
 
 

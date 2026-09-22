@@ -19,6 +19,7 @@ from app.api.settings import router as settings_router
 from app.api.screener import router as screener_router
 from app.api.dashboard import router as dashboard_router
 from app.api.allocation import router as allocation_router
+from app.api.admin import router as admin_router
 
 
 # Cấu hình logging chuyên nghiệp
@@ -112,6 +113,7 @@ app.include_router(history_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(screener_router, prefix="/api")
 app.include_router(allocation_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 

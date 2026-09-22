@@ -63,19 +63,43 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-        # Migration helper for portfolio_positions
+        # Migration helper for portfolio_positions & users
         try:
             # Check if user_id column exists
             await conn.execute(text("ALTER TABLE portfolio_positions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;"))
             await conn.execute(text("ALTER TABLE portfolio_positions ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);"))
             await conn.execute(text("ALTER TABLE alert_logs ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user';"))
         except Exception as e:
             logger.debug(f"Migration notice: {e}")
 
-    # Tạo tài khoản demo mặc định nếu hệ thống chưa có user nào
+    # Tạo tài khoản demo mặc định hoặc tài khoản admin nếu chưa có
     async with AsyncSessionLocal() as session:
         try:
             from sqlalchemy import select
+            # 1. Đảm bảo user 'vinhn' là admin nếu tồn tại
+            vinhn_user = (await session.execute(select(User).where(User.username == "vinhn"))).scalars().first()
+            if vinhn_user:
+                vinhn_user.role = "admin"
+                await session.commit()
+                logger.info("Assigned admin role to existing user 'vinhn'")
+
+            # 2. Đảm bảo có tài khoản quản trị viên 'admin'
+            admin_check = await session.execute(select(User).where(User.username == "admin"))
+            if not admin_check.scalars().first():
+                admin_user = User(
+                    username="admin",
+                    email="admin@tradewatch.vn",
+                    hashed_password=hash_password("admin123"),
+                    full_name="Quản Trị Viên Hệ Thống",
+                    role="admin",
+                    telegram_chat_id="",
+                )
+                session.add(admin_user)
+                await session.commit()
+                logger.info("Created default system admin user: username='admin', password='admin123'")
+
+            # 3. Tạo tài khoản demo nếu DB rỗng
             user_check = await session.execute(select(User).limit(1))
             if not user_check.scalars().first():
                 demo_user = User(
@@ -83,6 +107,7 @@ async def init_db():
                     email="demo@tradewatch.vn",
                     hashed_password=hash_password("123456"),
                     full_name="Nhà Đầu Tư Demo",
+                    role="user",
                     telegram_chat_id="",
                 )
                 session.add(demo_user)
@@ -96,6 +121,6 @@ async def init_db():
                 )
                 await session.commit()
         except Exception as e:
-            logger.debug(f"Demo user check: {e}")
+            logger.debug(f"User initialization notice: {e}")
 
     logger.info("Database schema initialized successfully.")

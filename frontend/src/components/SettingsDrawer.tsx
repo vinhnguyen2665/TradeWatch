@@ -29,6 +29,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { SystemSettings, UserAIConfig, AIProviderType } from '../types';
+import { useAuth } from '../context/AuthContext';
 import {
   getSettings,
   updateSettings,
@@ -50,14 +51,17 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   onSettingsUpdated,
   focusField,
 }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [testingTelegram, setTestingTelegram] = useState<boolean>(false);
   const [settingsData, setSettingsData] = useState<SystemSettings | null>(null);
 
-  // Active Tab state
-  const [activeTab, setActiveTab] = useState<'system' | 'ai' | 'telegram'>('system');
+  // Active Tab state: Nếu là admin mặc định mở 'system', nếu user thường thì chỉ mở 'ai'
+  const [activeTab, setActiveTab] = useState<'system' | 'ai' | 'telegram'>('ai');
 
   // User AI Settings state
   const [userAIConfig, setUserAIConfig] = useState<UserAIConfig | null>(null);
@@ -82,39 +86,54 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             geminiInputRef.current?.focus();
           }
         }, 250);
-      } else if (focusField === 'telegram') {
+      } else if (focusField === 'telegram' && isAdmin) {
         setActiveTab('telegram');
+      } else {
+        setActiveTab(isAdmin ? 'system' : 'ai');
       }
     }
-  }, [visible, focusField]);
+  }, [visible, focusField, isAdmin]);
 
   const loadAllSettings = async () => {
     setLoading(true);
     try {
-      const [sysData, aiData] = await Promise.all([
-        getSettings().catch(() => null),
-        getUserAIConfig().catch(() => null),
-      ]);
+      if (isAdmin) {
+        const [sysData, aiData] = await Promise.all([
+          getSettings().catch(() => null),
+          getUserAIConfig().catch(() => null),
+        ]);
 
-      if (sysData) {
-        setSettingsData(sysData);
-        form.setFieldsValue({
-          polling_interval_sec: sysData.polling_interval_sec,
-          alert_cooldown_min: sysData.alert_cooldown_min,
-          bot_status: sysData.bot_status === 'RUNNING',
-          trade_hours_only: sysData.trade_hours_only ?? true,
-          telegram_chat_id: sysData.telegram_chat_id || '',
-          telegram_bot_token: '',
-        });
-      }
+        if (sysData) {
+          setSettingsData(sysData);
+          form.setFieldsValue({
+            polling_interval_sec: sysData.polling_interval_sec,
+            alert_cooldown_min: sysData.alert_cooldown_min,
+            bot_status: sysData.bot_status === 'RUNNING',
+            trade_hours_only: sysData.trade_hours_only ?? true,
+            telegram_chat_id: sysData.telegram_chat_id || '',
+            telegram_bot_token: '',
+          });
+        }
 
-      if (aiData) {
-        setUserAIConfig(aiData);
-        setAiProvider(aiData.ai_provider || 'gemini');
-        setGeminiKeyInput(aiData.gemini_api_key_set ? '****************' : '');
-        setOpenaiKeyInput(aiData.openai_api_key_set ? '****************' : '');
-        setLocalBaseUrlInput(aiData.local_ai_base_url || '');
-        setLocalKeyInput(aiData.local_ai_api_key_set ? '****************' : '');
+        if (aiData) {
+          setUserAIConfig(aiData);
+          setAiProvider(aiData.ai_provider || 'gemini');
+          setGeminiKeyInput(aiData.gemini_api_key_set ? '****************' : '');
+          setOpenaiKeyInput(aiData.openai_api_key_set ? '****************' : '');
+          setLocalBaseUrlInput(aiData.local_ai_base_url || '');
+          setLocalKeyInput(aiData.local_ai_api_key_set ? '****************' : '');
+        }
+      } else {
+        // Người dùng thường: Chỉ gọi API cấu hình AI cá nhân, KHÔNG gọi API hệ thống
+        const aiData = await getUserAIConfig().catch(() => null);
+        if (aiData) {
+          setUserAIConfig(aiData);
+          setAiProvider(aiData.ai_provider || 'gemini');
+          setGeminiKeyInput(aiData.gemini_api_key_set ? '****************' : '');
+          setOpenaiKeyInput(aiData.openai_api_key_set ? '****************' : '');
+          setLocalBaseUrlInput(aiData.local_ai_base_url || '');
+          setLocalKeyInput(aiData.local_ai_api_key_set ? '****************' : '');
+        }
       }
     } catch (err) {
       console.error('Lỗi khi tải cài đặt:', err);
@@ -153,23 +172,25 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
       await updateUserAIConfig(aiPayload);
 
-      // 2. Lưu Cấu hình Hệ thống & Telegram
-      const formValues = form.getFieldsValue();
-      const sysPayload: any = {
-        polling_interval_sec: Number(formValues.polling_interval_sec || 10),
-        alert_cooldown_min: Number(formValues.alert_cooldown_min || 30),
-        bot_status: formValues.bot_status ? 'RUNNING' : 'PAUSED',
-        trade_hours_only: Boolean(formValues.trade_hours_only),
-        telegram_chat_id: formValues.telegram_chat_id,
-      };
+      // 2. Chỉ Lưu Cấu hình Hệ thống & Telegram nếu người dùng là ADMIN
+      if (isAdmin) {
+        const formValues = form.getFieldsValue();
+        const sysPayload: any = {
+          polling_interval_sec: Number(formValues.polling_interval_sec || 10),
+          alert_cooldown_min: Number(formValues.alert_cooldown_min || 30),
+          bot_status: formValues.bot_status ? 'RUNNING' : 'PAUSED',
+          trade_hours_only: Boolean(formValues.trade_hours_only),
+          telegram_chat_id: formValues.telegram_chat_id,
+        };
 
-      if (formValues.telegram_bot_token && formValues.telegram_bot_token.trim()) {
-        sysPayload.telegram_bot_token = formValues.telegram_bot_token.trim();
+        if (formValues.telegram_bot_token && formValues.telegram_bot_token.trim()) {
+          sysPayload.telegram_bot_token = formValues.telegram_bot_token.trim();
+        }
+
+        await updateSettings(sysPayload);
       }
 
-      await updateSettings(sysPayload);
-
-      message.success('Cập nhật cấu hình cài đặt và lưu API Key thành công!');
+      message.success(isAdmin ? 'Cập nhật cấu hình hệ thống & API Key thành công!' : 'Lưu cấu hình API Key AI thành công!');
       onSettingsUpdated();
       onClose();
     } catch (err: any) {
@@ -208,8 +229,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <Bot className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-sm font-bold text-slate-900 dark:text-white">Cài Đặt Hệ Thống & AI Engine</div>
-            <div className="text-[11px] font-normal text-slate-500">Quản lý API Key cá nhân, chu kỳ quét giá & Telegram</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">
+              {isAdmin ? 'Cài Đặt Hệ Thống & AI Engine' : 'Cài Đặt AI Engine Cá Nhân'}
+            </div>
+            <div className="text-[11px] font-normal text-slate-500">
+              {isAdmin ? 'Quản lý API Key cá nhân, chu kỳ quét giá & Telegram' : 'Quản lý API Key riêng (Google Gemini, ChatGPT, Local AI)'}
+            </div>
           </div>
         </div>
       }
@@ -234,15 +259,17 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         onChange={(k) => setActiveTab(k as any)}
         className="settings-tabs"
         items={[
-          {
-            key: 'system',
-            label: (
-              <span className="flex items-center gap-1.5 font-semibold text-xs">
-                <Clock className="w-3.5 h-3.5 text-blue-500" />
-                Hệ Thống & Quét Giá
-              </span>
-            ),
-            children: (
+          ...(isAdmin
+            ? [
+                {
+                  key: 'system',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold text-xs">
+                      <Clock className="w-3.5 h-3.5 text-blue-500" />
+                      Hệ Thống & Quét Giá
+                    </span>
+                  ),
+                  children: (
               <Form
                 form={form}
                 layout="vertical"
@@ -314,8 +341,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               </Form>
             ),
           },
-          {
-            key: 'ai',
+        ]
+      : []),
+    {
+      key: 'ai',
             label: (
               <span className="flex items-center gap-1.5 font-semibold text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
@@ -551,68 +580,72 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               </div>
             ),
           },
-          {
-            key: 'telegram',
-            label: (
-              <span className="flex items-center gap-1.5 font-semibold text-xs">
-                <Send className="w-3.5 h-3.5 text-emerald-500" />
-                Telegram Bot
-              </span>
-            ),
-            children: (
-              <Form
-                form={form}
-                layout="vertical"
-                className="space-y-4 pt-1"
-              >
-                <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
-                      <Send className="w-4 h-4" /> Cấu hình Telegram Bot Alert
-                    </div>
-                    {settingsData?.telegram_bot_token_set && (
-                      <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                        TOKEN ĐÃ CẤU HÌNH
-                      </span>
-                    )}
-                  </div>
+          ...(isAdmin
+            ? [
+                {
+                  key: 'telegram',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold text-xs">
+                      <Send className="w-3.5 h-3.5 text-emerald-500" />
+                      Telegram Bot
+                    </span>
+                  ),
+                  children: (
+                    <Form
+                      form={form}
+                      layout="vertical"
+                      className="space-y-4 pt-1"
+                    >
+                      <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
+                            <Send className="w-4 h-4" /> Cấu hình Telegram Bot Alert
+                          </div>
+                          {settingsData?.telegram_bot_token_set && (
+                            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                              TOKEN ĐÃ CẤU HÌNH
+                            </span>
+                          )}
+                        </div>
 
-                  <Form.Item
-                    name="telegram_bot_token"
-                    label={<span className="text-xs font-medium">Telegram Bot Token</span>}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Lấy từ @BotFather trên Telegram (VD: 123456789:ABCdef...). Để trống nếu không muốn đổi.</span>}
-                  >
-                    <Input.Password
-                      placeholder="Nhập Bot Token mới..."
-                    />
-                  </Form.Item>
+                        <Form.Item
+                          name="telegram_bot_token"
+                          label={<span className="text-xs font-medium">Telegram Bot Token</span>}
+                          help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Lấy từ @BotFather trên Telegram (VD: 123456789:ABCdef...). Để trống nếu không muốn đổi.</span>}
+                        >
+                          <Input.Password
+                            placeholder="Nhập Bot Token mới..."
+                          />
+                        </Form.Item>
 
-                  <Form.Item
-                    name="telegram_chat_id"
-                    label={<span className="text-xs font-medium">Telegram Chat ID / Group ID</span>}
-                    rules={[{ required: false }]}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">ID người nhận tin hoặc Group ID (VD: 987654321 hoặc -100123456789).</span>}
-                  >
-                    <Input
-                      placeholder="VD: 123456789"
-                      className="mono-font"
-                    />
-                  </Form.Item>
+                        <Form.Item
+                          name="telegram_chat_id"
+                          label={<span className="text-xs font-medium">Telegram Chat ID / Group ID</span>}
+                          rules={[{ required: false }]}
+                          help={<span className="text-[11px] text-slate-500 dark:text-slate-400">ID người nhận tin hoặc Group ID (VD: 987654321 hoặc -100123456789).</span>}
+                        >
+                          <Input
+                            placeholder="VD: 123456789"
+                            className="mono-font"
+                          />
+                        </Form.Item>
 
-                  <Button
-                    type="dashed"
-                    block
-                    icon={<MessageSquare className="w-4 h-4" />}
-                    onClick={handleTestTelegram}
-                    loading={testingTelegram}
-                    className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-medium"
-                  >
-                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm
-                  </Button>
-                </Card>
-              </Form>
-            ),
-          },
+                        <Button
+                          type="dashed"
+                          block
+                          icon={<MessageSquare className="w-4 h-4" />}
+                          onClick={handleTestTelegram}
+                          loading={testingTelegram}
+                          className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-medium"
+                        >
+                          Gửi Tin Nhắn Cảnh Báo Thử Nghiệm
+                        </Button>
+                      </Card>
+                    </Form>
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
     </Drawer>

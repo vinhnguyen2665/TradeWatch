@@ -28,6 +28,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
     telegram_chat_id = Column(String(100), nullable=True, comment="Telegram Chat ID riêng của từng người dùng")
+    role = Column(String(20), nullable=False, default="user", server_default="user", comment="Quyền tài khoản: 'admin' | 'user'")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

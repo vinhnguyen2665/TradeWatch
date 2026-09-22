@@ -16,6 +16,7 @@ import {
   User as UserIcon,
   LogOut,
   Send,
+  ShieldCheck,
 } from 'lucide-react';
 import { DashboardSummary } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +32,7 @@ interface HeaderStatsProps {
   onOpenScreener: () => void;
   onOpenAllocation: () => void;
   onOpenAddModal: () => void;
+  onOpenAdminUsers?: () => void;
 }
 
 export const HeaderStats: React.FC<HeaderStatsProps> = ({
@@ -44,8 +46,10 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
   onOpenScreener,
   onOpenAllocation,
   onOpenAddModal,
+  onOpenAdminUsers,
 }) => {
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const isRunning = summary?.bot_status === 'RUNNING';
   const isDark = themeMode === 'dark';
   const totalPnl = summary?.total_pnl_value ?? 0;
@@ -57,7 +61,14 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
       key: 'profile',
       label: (
         <div className="px-1 py-1">
-          <div className="font-bold text-slate-800 dark:text-slate-100">{user?.full_name || user?.username}</div>
+          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-100">
+            <span>{user?.full_name || user?.username}</span>
+            {isAdmin && (
+              <Tag color="magenta" className="text-[9px] font-bold m-0 px-1 py-0">
+                ADMIN
+              </Tag>
+            )}
+          </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400">{user?.email}</div>
           {user?.telegram_chat_id ? (
             <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
@@ -75,10 +86,29 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
     {
       type: 'divider' as const,
     },
+    ...(isAdmin
+      ? [
+          {
+            key: 'admin_portal',
+            icon: <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />,
+            label: (
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-purple-700 dark:text-purple-400">
+                  Quản Trị Người Dùng
+                </span>
+                <Tag color="magenta" className="text-[9px] m-0 px-1 py-0">
+                  ADMIN
+                </Tag>
+              </div>
+            ),
+            onClick: onOpenAdminUsers,
+          },
+        ]
+      : []),
     {
       key: 'settings',
       icon: <SlidersHorizontal className="w-3.5 h-3.5" />,
-      label: 'Cài đặt Hệ thống & AI Key',
+      label: isAdmin ? 'Cài đặt Hệ thống & AI Key' : 'Cài đặt AI Engine & API Key',
       onClick: onOpenSettings,
     },
     {
@@ -165,14 +195,25 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               </Button>
             </Tooltip>
 
-            <Tooltip title={isRunning ? 'Tạm dừng giám sát' : 'Tiếp tục giám sát'}>
+            <Tooltip
+              title={
+                isAdmin
+                  ? isRunning
+                    ? 'Tạm dừng giám sát toàn sàn'
+                    : 'Tiếp tục giám sát toàn sàn'
+                  : 'Chỉ Quản trị viên (Admin) mới có quyền Bật/Tắt Bot scraper toàn hệ thống'
+              }
+            >
               <Button
                 type={isRunning ? 'default' : 'primary'}
                 danger={isRunning}
                 size="middle"
+                disabled={!isAdmin}
                 icon={isRunning ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-                onClick={onToggleBot}
-                className="flex items-center gap-1.5 font-medium shadow-sm"
+                onClick={isAdmin ? onToggleBot : undefined}
+                className={`flex items-center gap-1.5 font-medium shadow-sm ${
+                  !isAdmin ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
               >
                 {isRunning ? 'Tạm dừng Bot' : 'Bật Bot'}
               </Button>
@@ -197,7 +238,11 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               >
                 <Avatar
                   size="small"
-                  className="bg-gradient-to-tr from-blue-600 to-emerald-500 font-bold uppercase text-[11px]"
+                  className={
+                    isAdmin
+                      ? 'bg-gradient-to-tr from-rose-600 via-purple-600 to-indigo-600 font-bold uppercase text-[11px]'
+                      : 'bg-gradient-to-tr from-blue-600 to-emerald-500 font-bold uppercase text-[11px]'
+                  }
                 >
                   {user?.username?.charAt(0) || 'U'}
                 </Avatar>
@@ -210,6 +255,18 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
 
           {/* Row 2: Trading Tools, AI Robo-Advisor & Actions */}
           <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && (
+              <Button
+                type="default"
+                size="middle"
+                icon={<ShieldCheck className="w-4 h-4 text-purple-600" />}
+                onClick={onOpenAdminUsers}
+                className="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/40 hover:border-purple-500 bg-purple-50/80 dark:bg-purple-950/40 font-semibold shadow-sm"
+              >
+                Quản Trị User
+              </Button>
+            )}
+
             <Button
               type="default"
               size="middle"

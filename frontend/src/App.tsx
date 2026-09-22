@@ -7,6 +7,7 @@ import { HistoryChartModal } from './components/HistoryChartModal';
 import { SettingsDrawer } from './components/SettingsDrawer';
 import { ScreenerModal } from './components/ScreenerModal';
 import { PortfolioAllocationModal } from './components/PortfolioAllocationModal';
+import { AdminUserManagementModal } from './components/AdminUserManagementModal';
 import { LandingPage } from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import {
@@ -42,6 +43,7 @@ const DashboardView: React.FC<{
   const [historyPosition, setHistoryPosition] = useState<PortfolioPosition | null>(null);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [settingsFocusField, setSettingsFocusField] = useState<string | null>(null);
+  const [adminUsersVisible, setAdminUsersVisible] = useState<boolean>(false);
   const [screenerVisible, setScreenerVisible] = useState<boolean>(false);
   const [allocationVisible, setAllocationVisible] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -180,6 +182,7 @@ const DashboardView: React.FC<{
           onOpenSettings={() => setSettingsVisible(true)}
           onOpenScreener={() => setScreenerVisible(true)}
           onOpenAllocation={() => setAllocationVisible(true)}
+          onOpenAdminUsers={() => setAdminUsersVisible(true)}
           onOpenAddModal={() => {
             setEditingPosition(null);
             setInitialFormData(null);
@@ -241,6 +244,12 @@ const DashboardView: React.FC<{
         onPositionsImported={() => loadData(true)}
         existingPositions={positions}
         onOpenSettings={handleOpenSettings}
+      />
+
+      {/* Admin User Management & Statistics Modal */}
+      <AdminUserManagementModal
+        visible={adminUsersVisible}
+        onClose={() => setAdminUsersVisible(false)}
       />
 
       {/* Settings Drawer */}

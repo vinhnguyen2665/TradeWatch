@@ -108,3 +108,18 @@ async def get_optional_current_user(
     except Exception:
         return None
 
+
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    FastAPI Dependency kiểm tra quyền Quản trị viên (Admin).
+    Nếu không phải admin, trả về HTTP 403 Forbidden.
+    """
+    if getattr(current_user, "role", "user") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Quyền truy cập bị từ chối: Chỉ Quản Trị Viên (Admin) mới có quyền thực hiện thao tác này.",
+        )
+    return current_user
+
