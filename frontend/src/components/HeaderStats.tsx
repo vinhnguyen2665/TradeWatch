@@ -13,6 +13,7 @@ import {
   PlusCircle,
   Sun,
   Moon,
+  Globe,
   User as UserIcon,
   LogOut,
   Send,
@@ -20,6 +21,14 @@ import {
 } from 'lucide-react';
 import { DashboardSummary } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import {
+  LANGUAGE_OPTIONS,
+  USER_ROLES,
+  ROLE_LABELS,
+  BOT_STATUS,
+  THEME_MODES,
+} from '../constants';
 
 interface HeaderStatsProps {
   summary: DashboardSummary | null;
@@ -49,12 +58,27 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
   onOpenAdminUsers,
 }) => {
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === 'admin';
-  const isRunning = summary?.bot_status === 'RUNNING';
-  const isDark = themeMode === 'dark';
+  const { t, language, setLanguage } = useLanguage();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
+  const isRunning = summary?.bot_status === BOT_STATUS.RUNNING;
+  const isDark = themeMode === THEME_MODES.DARK;
   const totalPnl = summary?.total_pnl_value ?? 0;
   const totalPnlPct = summary?.total_pnl_pct ?? 0;
   const isProfit = totalPnl >= 0;
+
+  const currentLangOption = LANGUAGE_OPTIONS.find((opt) => opt.code === language) || LANGUAGE_OPTIONS[0];
+
+  const langMenuItems: MenuProps['items'] = LANGUAGE_OPTIONS.map((opt) => ({
+    key: opt.code,
+    label: (
+      <div className="flex items-center gap-2 font-medium">
+        <span className="text-base">{opt.flag}</span>
+        <span>{opt.label}</span>
+        {language === opt.code && <span className="ml-auto text-blue-600 font-bold">✓</span>}
+      </div>
+    ),
+    onClick: () => setLanguage(opt.code),
+  }));
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -65,7 +89,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
             <span>{user?.full_name || user?.username}</span>
             {isAdmin && (
               <Tag color="magenta" className="text-[9px] font-bold m-0 px-1 py-0">
-                ADMIN
+                {ROLE_LABELS.ADMIN}
               </Tag>
             )}
           </div>
@@ -82,7 +106,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={() => onOpenSettings?.('telegram')}
               className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 cursor-pointer hover:underline"
             >
-              ⚠️ Chưa gán Telegram Chat ID (Bấm để cài)
+              ⚠️ {t('header.unassignedTg')}
             </div>
           )}
         </div>
@@ -93,33 +117,33 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
     },
     ...(isAdmin
       ? [
-          {
-            key: 'admin_portal',
-            icon: <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />,
-            label: (
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-purple-700 dark:text-purple-400">
-                  Quản Trị Người Dùng
-                </span>
-                <Tag color="magenta" className="text-[9px] m-0 px-1 py-0">
-                  ADMIN
-                </Tag>
-              </div>
-            ),
-            onClick: onOpenAdminUsers,
-          },
-        ]
+        {
+          key: 'admin_portal',
+          icon: <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />,
+          label: (
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-purple-700 dark:text-purple-400">
+                {t('header.adminPortal')}
+              </span>
+              <Tag color="magenta" className="text-[9px] m-0 px-1 py-0">
+                {ROLE_LABELS.ADMIN}
+              </Tag>
+            </div>
+          ),
+          onClick: onOpenAdminUsers,
+        },
+      ]
       : []),
     {
       key: 'settings',
       icon: <SlidersHorizontal className="w-3.5 h-3.5" />,
-      label: isAdmin ? 'Cài đặt Hệ thống, AI & Telegram' : 'Cài đặt AI & Telegram Cảnh Báo',
+      label: isAdmin ? t('header.adminSettingsTitle') : t('header.userSettingsTitle'),
       onClick: () => onOpenSettings(),
     },
     {
       key: 'logout',
       icon: <LogOut className="w-3.5 h-3.5 text-rose-500" />,
-      label: <span className="text-rose-600 dark:text-rose-400 font-medium">Đăng xuất</span>,
+      label: <span className="text-rose-600 dark:text-rose-400 font-medium">{t('common.logout')}</span>,
       onClick: logout,
     },
   ];
@@ -145,7 +169,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                     ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                     }`}>
-                    {isRunning ? 'BOT RUNNING' : 'BOT PAUSED'}
+                    {isRunning ? t('header.botRunning') : t('header.botPaused')}
                   </span>
                 }
               />
@@ -153,11 +177,11 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                 <Tooltip
                   title={
                     <div className="space-y-1.5 text-xs p-1">
-                      <div className="font-bold text-amber-300">Khung Giờ Giao Dịch Chứng Khoán VN:</div>
-                      <div>• <b>Phiên Sáng:</b> 09:00 – 11:30 (ATO 09:00–09:15 HOSE)</div>
-                      <div>• <b>Nghỉ Trưa:</b> 11:30 – 13:00</div>
-                      <div>• <b>Phiên Chiều:</b> 13:00 – 15:00 (ATC 14:30–14:45, PLO đến 15:00)</div>
-                      <div>• <b>T2 - T6:</b> Tự động quét theo giờ giao dịch</div>
+                      <div className="font-bold text-amber-300">{t('header.tradingHoursTitle')}</div>
+                      <div>• <b>{t('header.sessionMorning')}</b> 09:00 – 11:30 (ATO 09:00–09:15 HOSE)</div>
+                      <div>• <b>{t('header.sessionLunch')}</b> 11:30 – 13:00</div>
+                      <div>• <b>{t('header.sessionAfternoon')}</b> 13:00 – 15:00 (ATC 14:30–14:45, PLO)</div>
+                      <div>• <b>{t('header.sessionDays')}</b> {t('header.sessionDaysDesc')}</div>
                       <div className="text-[11px] text-slate-300 pt-1 border-t border-slate-700">
                         {summary.market_status.description}
                       </div>
@@ -175,9 +199,9 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Giám sát danh mục tự động (HOSE/HNX/UPCoM) • Chu kỳ: <span className="text-blue-600 dark:text-blue-400 font-semibold">{summary?.polling_interval_sec || 30}s</span>
+              {t('header.appSubtitle')} • {t('header.cycle')} <span className="text-blue-600 dark:text-blue-400 font-semibold">{summary?.polling_interval_sec || 30}s</span>
               {summary?.trade_hours_only && (
-                <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">• Chỉ quét trong giờ giao dịch</span>
+                <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">• {t('header.tradeHoursOnly')}</span>
               )}
             </p>
           </div>
@@ -185,10 +209,22 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
 
         {/* Action Buttons arranged in 2 organized rows */}
         <div className="flex flex-col items-start sm:items-end gap-2.5 shrink-0">
-          {/* Row 1: System Controls, Bot Switch, Theme & Profile */}
+          {/* Row 1: System Controls, Bot Switch, Language, Theme & Profile */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Language Switcher Dropdown */}
+            <Dropdown menu={{ items: langMenuItems }} placement="bottomRight" arrow>
+              <Button
+                type="default"
+                size="middle"
+                className="flex items-center gap-1.5 font-medium border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-500"
+              >
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                <span>{currentLangOption.shortLabel}</span>
+              </Button>
+            </Dropdown>
+
             {/* Theme Mode Toggle Button */}
-            <Tooltip title={isDark ? 'Chuyển sang Giao diện Sáng (Light Mode)' : 'Chuyển sang Giao diện Tối (Dark Mode)'}>
+            <Tooltip title={isDark ? t('header.themeLight') : t('header.themeDark')}>
               <Button
                 type="default"
                 size="middle"
@@ -196,7 +232,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                 onClick={onToggleTheme}
                 className="flex items-center gap-1.5 font-medium border-slate-200 dark:border-slate-700 hover:border-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
               >
-                {isDark ? 'Sáng' : 'Tối'}
+                {isDark ? t('header.modeLight') : t('header.modeDark')}
               </Button>
             </Tooltip>
 
@@ -204,9 +240,9 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               title={
                 isAdmin
                   ? isRunning
-                    ? 'Tạm dừng giám sát toàn sàn'
-                    : 'Tiếp tục giám sát toàn sàn'
-                  : 'Chỉ Quản trị viên (Admin) mới có quyền Bật/Tắt Bot scraper toàn hệ thống'
+                    ? t('header.pauseBotTooltip')
+                    : t('header.resumeBotTooltip')
+                  : t('header.adminOnlyBot')
               }
             >
               <Button
@@ -216,11 +252,10 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                 disabled={!isAdmin}
                 icon={isRunning ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
                 onClick={isAdmin ? onToggleBot : undefined}
-                className={`flex items-center gap-1.5 font-medium shadow-sm ${
-                  !isAdmin ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
+                className={`flex items-center gap-1.5 font-medium shadow-sm ${!isAdmin ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
               >
-                {isRunning ? 'Tạm dừng Bot' : 'Bật Bot'}
+                {isRunning ? t('header.pauseBot') : t('header.startBot')}
               </Button>
             </Tooltip>
 
@@ -231,7 +266,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={onRefresh}
               className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
             >
-              Làm mới
+              {t('common.refresh')}
             </Button>
 
             {/* User Profile Dropdown */}
@@ -268,7 +303,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                 onClick={onOpenAdminUsers}
                 className="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-500/40 hover:border-purple-500 bg-purple-50/80 dark:bg-purple-950/40 font-semibold shadow-sm"
               >
-                Quản Trị User
+                {t('adminUsers.title')}
               </Button>
             )}
 
@@ -279,7 +314,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={onOpenAllocation}
               className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40 hover:border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 font-semibold shadow-sm"
             >
-              AI Phân Bổ Vốn
+              {t('allocation.modalTitle')}
             </Button>
 
             <Button
@@ -289,7 +324,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={onOpenScreener}
               className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/30 hover:border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-medium"
             >
-              Gợi ý mã CP
+              {t('header.suggestStocks')}
             </Button>
 
             <Button
@@ -299,7 +334,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={() => onOpenSettings()}
               className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
             >
-              Cài đặt
+              {t('header.settingsBtn')}
             </Button>
 
             <Button
@@ -309,7 +344,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               onClick={onOpenAddModal}
               className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 font-semibold"
             >
-              Thêm Mã Mới
+              {t('header.addPositionBtn')}
             </Button>
           </div>
         </div>
@@ -322,10 +357,10 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
         <Card className="bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Danh mục nắm giữ</p>
+              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">{t('header.holdingsTitle')}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl font-bold text-slate-900 dark:text-white mono-font">{summary?.total_positions ?? 0}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">mã ({summary?.active_positions ?? 0} active)</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('header.stocksUnit')} ({summary?.active_positions ?? 0} {t('header.activeCount')})</span>
               </div>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/20">
@@ -338,12 +373,12 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
         <Card className="bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Giá trị Danh mục</p>
+              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">{t('header.portfolioValue')}</p>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-2xl font-bold text-slate-900 dark:text-white mono-font">
-                  {summary ? ((summary.current_portfolio_value * 1000) / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '0'}
+                  {summary ? ((summary.current_portfolio_value * 1000) / 1000000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 1 }) : '0'}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Triệu VNĐ</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t('header.millionVnd')}</span>
               </div>
             </div>
             <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-200 dark:border-indigo-500/20">
@@ -356,13 +391,13 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
         <Card className="bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Tổng Lãi / Lỗ</p>
+              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">{t('header.totalPnl')}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className={`text-2xl font-bold mono-font ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {isProfit ? '+' : ''}{totalPnlPct.toFixed(2)}%
                 </span>
                 <Tag color={isProfit ? 'green' : 'red'} className="text-[11px] font-semibold border-0">
-                  {isProfit ? '+' : ''}{((totalPnl * 1000) / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} Tr
+                  {isProfit ? '+' : ''}{((totalPnl * 1000) / 1000000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 1 })} {t('header.millionShort')}
                 </Tag>
               </div>
             </div>
@@ -376,7 +411,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
         <Card className="bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div className="w-full">
-              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Top Tăng / Giảm</p>
+              <p className="text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 tracking-wider">{t('header.topPerformer')}</p>
               <div className="flex items-center justify-between mt-1.5 pr-2">
                 {summary?.top_gainer ? (
                   <div className="flex items-center gap-1.5">
@@ -386,7 +421,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-400">Chưa có dữ liệu</span>
+                  <span className="text-xs text-slate-400">{t('header.noData')}</span>
                 )}
 
                 {summary?.top_loser && summary.top_loser.ticker !== summary.top_gainer?.ticker && (

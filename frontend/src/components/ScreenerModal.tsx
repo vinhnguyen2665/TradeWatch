@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ScreenerSignal } from '../types';
 import { getScreenerSuggestions } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ScreenerModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
   onClose,
   onQuickAdd,
 }) => {
+  const { t, language } = useLanguage();
   const [signals, setSignals] = useState<ScreenerSignal[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -47,7 +49,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
 
   const columns: ColumnsType<ScreenerSignal> = [
     {
-      title: 'Mã CP',
+      title: t('screener.colTicker'),
       dataIndex: 'ticker',
       key: 'ticker',
       width: 150,
@@ -64,7 +66,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
       ),
     },
     {
-      title: 'Giá (x1K)',
+      title: `${t('screener.colPrice')} (x1K)`,
       dataIndex: 'price',
       key: 'price',
       width: 110,
@@ -81,27 +83,27 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
       },
     },
     {
-      title: 'Khối lượng / SMA20',
+      title: `${t('screener.colVolume')} / SMA20`,
       key: 'volume',
       width: 160,
       render: (_, record: ScreenerSignal) => (
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
             <span className="text-slate-800 dark:text-white font-semibold mono-font text-xs">
-              {(record.volume / 1000).toLocaleString('vi-VN')}K
+              {(record.volume / 1000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}K
             </span>
             <Tag color={record.volume_spike_ratio >= 1.5 ? 'orange' : 'default'} className="text-[10px] px-1 py-0 border-0 font-bold">
               {record.volume_spike_ratio}x Vol
             </Tag>
           </div>
           <span className="text-[10px] text-slate-400 dark:text-slate-500 mono-font">
-            SMA20: {(record.sma20_volume / 1000).toLocaleString('vi-VN')}K
+            SMA20: {(record.sma20_volume / 1000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}K
           </span>
         </div>
       ),
     },
     {
-      title: 'Chỉ báo Kỹ thuật',
+      title: t('screener.colIndicators'),
       key: 'indicators',
       width: 150,
       render: (_, record: ScreenerSignal) => (
@@ -124,7 +126,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
       ),
     },
     {
-      title: 'Tín hiệu & Lý do',
+      title: t('screener.colSignal'),
       key: 'reason',
       render: (_, record: ScreenerSignal) => {
         let icon = <Zap className="w-3.5 h-3.5 mr-1" />;
@@ -132,13 +134,13 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
 
         if (record.signal_type === 'VOLUME_BREAKOUT') {
           icon = <Flame className="w-3.5 h-3.5 mr-1 text-orange-500" />;
-          label = 'ĐỘT BIẾN KHỐI LƯỢNG';
+          label = t('screener.breakoutSignal');
         } else if (record.signal_type === 'RSI_OVERSOLD_REBOUND') {
           icon = <Activity className="w-3.5 h-3.5 mr-1 text-purple-500" />;
-          label = 'RSI ĐẢO CHIỀU ĐÁY';
+          label = t('screener.oversoldSignal');
         } else if (record.signal_type === 'MA20_BREAKOUT') {
           icon = <TrendingUp className="w-3.5 h-3.5 mr-1 text-cyan-500" />;
-          label = 'VƯỢT MA20';
+          label = t('screener.goldenCrossSignal');
         }
 
         return (
@@ -159,7 +161,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
       },
     },
     {
-      title: 'Hành động',
+      title: t('common.actions'),
       key: 'actions',
       width: 140,
       render: (_, record: ScreenerSignal) => (
@@ -173,7 +175,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
           }}
           className="bg-emerald-600 hover:bg-emerald-500 font-semibold flex items-center gap-1 text-xs"
         >
-          Theo dõi
+          {t('screener.quickAddBtn')}
         </Button>
       ),
     },
@@ -185,14 +187,14 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
         <div className="flex items-center justify-between pr-8">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500" />
-            <span className="font-bold text-lg">Bộ Lọc Gợi Ý Cổ Phiếu Tiềm Năng</span>
+            <span className="font-bold text-lg">{t('screener.title')}</span>
           </div>
           <Button
             size="small"
             icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
             onClick={loadSignals}
           >
-            Quét lại
+            {t('screener.refreshScanner')}
           </Button>
         </div>
       }
@@ -203,8 +205,8 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
     >
       <div className="mt-4 space-y-3">
         <div className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
-          <span>Tiêu chí: 🚀 <b>Khối lượng đột biến</b> ($Vol \ge 1.5 \times SMA20$) • 💡 <b>RSI(14) quá bán hồi phục</b> • 📈 <b>Phá vỡ cản MA20</b></span>
-          <span className="font-semibold text-blue-600 dark:text-blue-400">{signals.length} tín hiệu tìm thấy</span>
+          <span>{t('screener.criteria')}</span>
+          <span className="font-semibold text-blue-600 dark:text-blue-400">{signals.length} {t('screener.signalsFound')}</span>
         </div>
 
         <Table
@@ -217,7 +219,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
           locale={{
             emptyText: (
               <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                Không tìm thấy tín hiệu bùng nổ nào trong watchlist lúc này.
+                {t('screener.scanEmpty')}
               </div>
             ),
           }}

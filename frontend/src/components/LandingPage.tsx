@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Card, Badge, Tag, Tooltip } from 'antd';
+import { Button, Card, Badge, Tag, Tooltip, Dropdown, MenuProps } from 'antd';
 import {
   TrendingUp,
   Shield,
@@ -18,8 +18,11 @@ import {
   Clock,
   Layers,
   ChevronRight,
+  Globe,
 } from 'lucide-react';
 import { AuthModal } from './AuthModal';
+import { useLanguage } from '../context/LanguageContext';
+import { LANGUAGE_OPTIONS, THEME_MODES } from '../constants';
 
 interface LandingPageProps {
   themeMode: 'light' | 'dark';
@@ -30,9 +33,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   themeMode,
   onToggleTheme,
 }) => {
+  const { t, language, setLanguage } = useLanguage();
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
-  const isDark = themeMode === 'dark';
+  const isDark = themeMode === THEME_MODES.DARK;
+
+  const currentLangOption = LANGUAGE_OPTIONS.find((opt) => opt.code === language) || LANGUAGE_OPTIONS[0];
+
+  const langMenuItems: MenuProps['items'] = LANGUAGE_OPTIONS.map((opt) => ({
+    key: opt.code,
+    label: (
+      <div className="flex items-center gap-2 font-medium">
+        <span className="text-base">{opt.flag}</span>
+        <span>{opt.label}</span>
+        {language === opt.code && <span className="ml-auto text-blue-600 font-bold">✓</span>}
+      </div>
+    ),
+    onClick: () => setLanguage(opt.code),
+  }));
 
   const openAuth = (tab: 'login' | 'register') => {
     setAuthTab(tab);
@@ -107,7 +125,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Tooltip title={isDark ? 'Chuyển sang Giao diện Sáng' : 'Chuyển sang Giao diện Tối'}>
+            {/* Language Selector */}
+            <Dropdown menu={{ items: langMenuItems }} placement="bottomRight" arrow>
+              <Button
+                type="text"
+                className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 px-2.5 py-1 rounded-lg"
+              >
+                <Globe className="w-4 h-4 text-blue-500" />
+                <span>{currentLangOption.shortLabel}</span>
+              </Button>
+            </Dropdown>
+
+            <Tooltip title={isDark ? t('header.themeLight') : t('header.themeDark')}>
               <Button
                 type="text"
                 shape="circle"
@@ -122,7 +151,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={() => openAuth('login')}
               className="font-semibold text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:border-blue-500 bg-white/50 dark:bg-slate-900/50"
             >
-              Đăng Nhập
+              {t('common.login')}
             </Button>
 
             <Button
@@ -130,7 +159,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={() => openAuth('register')}
               className="bg-blue-600 hover:bg-blue-500 font-semibold shadow-lg shadow-blue-600/30"
             >
-              Bắt Đầu Miễn Phí
+              {t('landing.getStartedBtn')}
             </Button>
           </div>
         </div>

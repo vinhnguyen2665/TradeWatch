@@ -267,41 +267,46 @@ const DashboardView: React.FC<{
 
 };
 
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { STORAGE_KEYS, THEME_MODES, ThemeMode } from './constants';
+
 const AppContent: React.FC = () => {
   // Theme mode: Default to 'light', load preference from localStorage if previously saved
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('tradewatch_theme');
-    return (saved === 'dark' || saved === 'light') ? saved : 'light';
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.THEME);
+    return saved === THEME_MODES.DARK || saved === THEME_MODES.LIGHT ? (saved as ThemeMode) : THEME_MODES.LIGHT;
   });
 
   const { isAuthenticated, loading } = useAuth();
+  const { antdLocale, t } = useLanguage();
 
   // Sync theme with HTML root class
   useEffect(() => {
-    if (themeMode === 'dark') {
+    if (themeMode === THEME_MODES.DARK) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('tradewatch_theme', themeMode);
+    localStorage.setItem(STORAGE_KEYS.THEME, themeMode);
   }, [themeMode]);
 
   const handleToggleTheme = () => {
-    setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setThemeMode((prev) => (prev === THEME_MODES.DARK ? THEME_MODES.LIGHT : THEME_MODES.DARK));
   };
 
-  const isDark = themeMode === 'dark';
+  const isDark = themeMode === THEME_MODES.DARK;
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Spin size="large" tip="Đang tải TradeWatch..." />
+        <Spin size="large" tip={t('common.loading')} />
       </div>
     );
   }
 
   return (
     <ConfigProvider
+      locale={antdLocale}
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
@@ -325,9 +330,11 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 };
 

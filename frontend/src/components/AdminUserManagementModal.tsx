@@ -59,6 +59,8 @@ import {
   deleteAdminUser,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { USER_ROLES, ROLE_LABELS } from '../constants';
 
 interface AdminUserManagementModalProps {
   visible: boolean;
@@ -70,6 +72,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
   onClose,
 }) => {
   const { user: currentUser } = useAuth();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'stats' | 'users'>('stats');
 
   // Stats state
@@ -203,11 +206,11 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
   // User Table Columns
   const columns = [
     {
-      title: 'Người Dùng',
+      title: t('adminUsers.colUser'),
       key: 'user_info',
       render: (_: any, record: UserAdminItem) => {
         const initial = (record.username || 'U').charAt(0).toUpperCase();
-        const isAdmin = record.role === 'admin';
+        const isAdmin = record.role === USER_ROLES.ADMIN;
         return (
           <div className="flex items-center gap-3">
             <Avatar
@@ -225,7 +228,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                 <span>{record.full_name || record.username}</span>
                 {currentUser?.id === record.id && (
                   <Tag color="cyan" className="text-[10px] m-0 px-1 py-0 leading-tight">
-                    Bạn
+                    {t('common.user')} (You)
                   </Tag>
                 )}
               </div>
@@ -238,24 +241,24 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       },
     },
     {
-      title: 'Vai Trò (Phân Quyền)',
+      title: t('adminUsers.colRole'),
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => {
-        const isAdmin = role === 'admin';
+        const isAdmin = role === USER_ROLES.ADMIN;
         return (
           <Tag
             color={isAdmin ? 'error' : 'processing'}
             className="flex items-center gap-1 w-fit font-bold text-xs px-2.5 py-0.5 rounded-full"
           >
             {isAdmin ? <ShieldCheck className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-            <span>{isAdmin ? 'ADMINISTRATOR' : 'USER THƯỜNG'}</span>
+            <span>{isAdmin ? ROLE_LABELS.ADMIN : ROLE_LABELS.USER}</span>
           </Tag>
         );
       },
     },
     {
-      title: 'Telegram Alert',
+      title: t('adminUsers.colTelegram'),
       dataIndex: 'telegram_chat_id',
       key: 'telegram_chat_id',
       render: (tg: string | undefined) =>
@@ -264,11 +267,11 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             <Send className="w-3 h-3" /> {tg}
           </span>
         ) : (
-          <span className="text-xs text-slate-400 italic">Chưa kết nối</span>
+          <span className="text-xs text-slate-400 italic">{t('header.noData')}</span>
         ),
     },
     {
-      title: 'Mã Theo Dõi',
+      title: t('adminUsers.colPositions'),
       dataIndex: 'positions_count',
       key: 'positions_count',
       align: 'center' as const,
@@ -286,19 +289,19 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       ),
     },
     {
-      title: 'Cảnh Báo Đã Gửi',
+      title: t('adminUsers.alertsSent'),
       dataIndex: 'alerts_count',
       key: 'alerts_count',
       align: 'center' as const,
       sorter: (a: UserAdminItem, b: UserAdminItem) => a.alerts_count - b.alerts_count,
       render: (count: number) => (
         <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">
-          {count} lượt
+          {count}
         </span>
       ),
     },
     {
-      title: 'Ngày Tham Gia',
+      title: t('adminUsers.colCreatedAt'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (dateStr: string) => {
@@ -306,7 +309,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
           const d = new Date(dateStr);
           return (
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {d.toLocaleDateString('vi-VN')}
+              {d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
             </span>
           );
         } catch {
@@ -315,14 +318,14 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       },
     },
     {
-      title: 'Thao Tác',
+      title: t('adminUsers.colActions'),
       key: 'actions',
       align: 'right' as const,
       render: (_: any, record: UserAdminItem) => {
         const isSelf = currentUser?.id === record.id;
         return (
           <Space size="small">
-            <Tooltip title="Chỉnh sửa thông tin & Phân quyền">
+            <Tooltip title={t('common.edit')}>
               <Button
                 type="text"
                 size="small"
@@ -330,13 +333,13 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                 onClick={() => handleOpenEdit(record)}
               />
             </Tooltip>
-            <Tooltip title={isSelf ? 'Không thể xóa chính tài khoản đang đăng nhập' : 'Xóa tài khoản người dùng'}>
+            <Tooltip title={isSelf ? 'Self' : t('common.delete')}>
               <Popconfirm
-                title="Xác nhận xóa tài khoản?"
-                description={`Bạn có chắc muốn xóa vĩnh viễn tài khoản @${record.username}? Toàn bộ danh mục và cảnh báo liên quan sẽ bị xóa.`}
+                title={t('portfolio.deleteConfirmTitle')}
+                description={`@${record.username}`}
                 onConfirm={() => handleDeleteUser(record)}
-                okText="Xác nhận xóa"
-                cancelText="Hủy"
+                okText={t('common.confirm')}
+                cancelText={t('common.cancel')}
                 okButtonProps={{ danger: true }}
                 disabled={isSelf}
               >
@@ -365,13 +368,13 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             </div>
             <div>
               <div className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Trung Tâm Quản Trị Hệ Thống & Người Dùng</span>
+                <span>{t('adminUsers.title')}</span>
                 <Tag color="magenta" className="text-[10px] font-bold m-0 px-2 py-0.5 rounded-full uppercase">
-                  Admin Portal
+                  {ROLE_LABELS.ADMIN}
                 </Tag>
               </div>
               <div className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                Thống kê người dùng toàn hệ thống, cấp quyền & quản lý danh mục thành viên
+                {t('adminUsers.subtitle')}
               </div>
             </div>
           </div>
@@ -394,14 +397,14 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
               label: (
                 <span className="flex items-center gap-2 font-semibold text-xs">
                   <BarChart3 className="w-4 h-4 text-purple-600" />
-                  Thống Kê & Tổng Quan
+                  {t('adminUsers.tabStats')}
                 </span>
               ),
               children: (
                 <div className="space-y-6 pt-2">
                   {statsLoading && !stats ? (
                     <div className="py-12 flex items-center justify-center">
-                      <Spin size="large" tip="Đang tải dữ liệu thống kê..." />
+                      <Spin size="large" tip={t('common.loading')} />
                     </div>
                   ) : (
                     <>
@@ -409,57 +412,57 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
                         <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 shadow-sm" bodyStyle={{ padding: '14px' }}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase">Tổng Thành Viên</span>
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase">{t('adminUsers.totalUsers')}</span>
                             <Users className="w-4 h-4 text-blue-500" />
                           </div>
                           <div className="text-2xl font-bold text-slate-900 dark:text-white mono-font">
                             {stats?.total_users || 0}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Tất cả tài khoản hệ thống</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{t('adminUsers.totalUsers')}</div>
                         </Card>
 
                         <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 shadow-sm" bodyStyle={{ padding: '14px' }}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase">Quản Trị Viên</span>
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase">{t('adminUsers.activeAdmins')}</span>
                             <ShieldCheck className="w-4 h-4 text-rose-500" />
                           </div>
                           <div className="text-2xl font-bold text-rose-600 dark:text-rose-400 mono-font">
                             {stats?.total_admins || 0}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Quyền Admin tối cao</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{ROLE_LABELS.ADMIN}</div>
                         </Card>
 
                         <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 shadow-sm" bodyStyle={{ padding: '14px' }}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase">User Thường</span>
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase">{t('adminUsers.roleUser')}</span>
                             <UserCheck className="w-4 h-4 text-emerald-500" />
                           </div>
                           <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mono-font">
                             {stats?.total_regular_users || 0}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Nhà đầu tư cá nhân</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{ROLE_LABELS.USER}</div>
                         </Card>
 
                         <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 shadow-sm" bodyStyle={{ padding: '14px' }}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase">Vị Thế Đang Quét</span>
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase">{t('adminUsers.trackedPositions')}</span>
                             <TrendingUp className="w-4 h-4 text-indigo-500" />
                           </div>
                           <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mono-font">
                             {stats?.total_positions_tracked || 0}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Mã CP trong danh mục</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{t('adminUsers.trackedPositions')}</div>
                         </Card>
 
                         <Card className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 shadow-sm" bodyStyle={{ padding: '14px' }}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase">Alert Đã Bắn</span>
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase">{t('adminUsers.alertsSent')}</span>
                             <Send className="w-4 h-4 text-amber-500" />
                           </div>
                           <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mono-font">
                             {stats?.total_alerts_sent || 0}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Qua Telegram bot</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{t('adminUsers.alertsSent')}</div>
                         </Card>
                       </div>
 
@@ -474,12 +477,9 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                             <div className="flex items-center gap-2">
                               <Activity className="w-4 h-4 text-purple-600" />
                               <span className="font-bold text-xs text-slate-800 dark:text-slate-200 uppercase">
-                                Tăng Trưởng Thành Viên Theo Thời Gian
+                                {t('adminUsers.growthChart')}
                               </span>
                             </div>
-                            <Tag color="purple" className="text-[10px] font-mono">
-                              Tích lũy
-                            </Tag>
                           </div>
 
                           <div className="h-56 w-full">
@@ -506,8 +506,8 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                                     tickLine={false}
                                   />
                                   <RechartsTooltip
-                                    formatter={(value: any) => [`${value} người dùng`, 'Tổng thành viên']}
-                                    labelFormatter={(label) => `Thời điểm: ${label}`}
+                                    formatter={(value: any) => [`${value}`, t('adminUsers.totalUsers')]}
+                                    labelFormatter={(label) => `${label}`}
                                     contentStyle={{
                                       backgroundColor: 'rgba(15, 23, 42, 0.95)',
                                       borderRadius: '8px',
@@ -528,7 +528,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                               </ResponsiveContainer>
                             ) : (
                               <div className="h-full flex items-center justify-center text-xs text-slate-400">
-                                Chưa có dữ liệu lịch sử
+                                {t('header.noData')}
                               </div>
                             )}
                           </div>
@@ -543,10 +543,9 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                             <div className="flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-amber-500" />
                               <span className="font-bold text-xs text-slate-800 dark:text-slate-200 uppercase">
-                                Top Thành Viên Tích Cực
+                                Top Users
                               </span>
                             </div>
-                            <span className="text-[10px] text-slate-400">Theo số lượng mã CP</span>
                           </div>
 
                           <div className="space-y-2.5">
@@ -563,9 +562,9 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                                     <div>
                                       <div className="font-bold text-xs text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                                         <span>{u.full_name || u.username}</span>
-                                        {u.role === 'admin' && (
+                                        {u.role === USER_ROLES.ADMIN && (
                                           <Tag color="red" className="text-[9px] m-0 px-1 py-0">
-                                            Admin
+                                            {ROLE_LABELS.ADMIN}
                                           </Tag>
                                         )}
                                       </div>
@@ -576,17 +575,17 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                                   </div>
                                   <div className="text-right">
                                     <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                                      {u.positions_count} mã CP
+                                      {u.positions_count} {t('header.stocksUnit')}
                                     </div>
                                     <div className="text-[10px] text-slate-400">
-                                      {u.alerts_count} cảnh báo
+                                      {u.alerts_count} alerts
                                     </div>
                                   </div>
                                 </div>
                               ))
                             ) : (
                               <div className="py-8 text-center text-xs text-slate-400">
-                                Chưa có dữ liệu thành viên
+                                {t('header.noData')}
                               </div>
                             )}
                           </div>
@@ -602,7 +601,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
               label: (
                 <span className="flex items-center gap-2 font-semibold text-xs">
                   <Users className="w-4 h-4 text-blue-600" />
-                  Danh Sách & Phân Quyền Người Dùng
+                  {t('adminUsers.tabUsers')}
                 </span>
               ),
               children: (
@@ -612,7 +611,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                     <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
                       <Input
                         prefix={<Search className="w-3.5 h-3.5 text-slate-400" />}
-                        placeholder="Tìm username, email, họ tên..."
+                        placeholder={t('adminUsers.searchPlaceholder')}
                         value={searchKeyword}
                         onChange={(e) => setSearchKeyword(e.target.value)}
                         className="w-full sm:w-64 text-xs"
@@ -623,9 +622,9 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                         onChange={(v) => setRoleFilter(v)}
                         className="w-36 text-xs"
                         options={[
-                          { label: 'Tất cả vai trò', value: 'all' },
-                          { label: 'Quản trị viên (Admin)', value: 'admin' },
-                          { label: 'Người dùng (User)', value: 'user' },
+                          { label: t('adminUsers.allRoles'), value: 'all' },
+                          { label: t('adminUsers.roleAdmin'), value: USER_ROLES.ADMIN },
+                          { label: t('adminUsers.roleUser'), value: USER_ROLES.USER },
                         ]}
                       />
                       <Button
@@ -635,7 +634,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                         onClick={loadUsers}
                         className="text-xs"
                       >
-                        Làm mới
+                        {t('common.refresh')}
                       </Button>
                     </div>
 
@@ -648,7 +647,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                       }}
                       className="bg-blue-600 hover:bg-blue-500 font-semibold shadow-sm w-full sm:w-auto"
                     >
-                      Thêm Người Dùng Mới
+                      {t('adminUsers.createUserBtn')}
                     </Button>
                   </div>
 
@@ -661,7 +660,6 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                     pagination={{
                       pageSize: 8,
                       showSizeChanger: false,
-                      showTotal: (total) => `Tổng cộng ${total} người dùng`,
                     }}
                     className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden"
                     size="middle"
@@ -678,7 +676,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
         title={
           <div className="flex items-center gap-2 font-bold text-sm">
             <UserPlus className="w-4 h-4 text-blue-600" />
-            <span>Tạo Tài Khoản Người Dùng Mới</span>
+            <span>{t('adminUsers.createUserBtn')}</span>
           </div>
         }
         open={createModalVisible}
@@ -691,15 +689,15 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
           form={createForm}
           layout="vertical"
           onFinish={handleCreateSubmit}
-          initialValues={{ role: 'user' }}
+          initialValues={{ role: USER_ROLES.USER }}
           className="pt-2 space-y-3"
         >
           <Form.Item
             name="username"
-            label={<span className="text-xs font-semibold">Tên đăng nhập (Username)</span>}
+            label={<span className="text-xs font-semibold">{t('auth.username')}</span>}
             rules={[
-              { required: true, message: 'Vui lòng nhập username' },
-              { min: 3, message: 'Tối thiểu 3 ký tự' },
+              { required: true, message: t('auth.username') },
+              { min: 3, message: 'Min 3 chars' },
             ]}
           >
             <Input placeholder="VD: nguyenvan_a" />
@@ -707,10 +705,10 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
 
           <Form.Item
             name="email"
-            label={<span className="text-xs font-semibold">Email</span>}
+            label={<span className="text-xs font-semibold">{t('auth.email')}</span>}
             rules={[
-              { required: true, message: 'Vui lòng nhập địa chỉ email' },
-              { type: 'email', message: 'Email không hợp lệ' },
+              { required: true, message: t('auth.email') },
+              { type: 'email', message: 'Email invalid' },
             ]}
           >
             <Input placeholder="VD: user@domain.com" />
@@ -718,51 +716,51 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
 
           <Form.Item
             name="password"
-            label={<span className="text-xs font-semibold">Mật khẩu khởi tạo</span>}
+            label={<span className="text-xs font-semibold">{t('auth.password')}</span>}
             rules={[
-              { required: true, message: 'Vui lòng nhập mật khẩu' },
-              { min: 6, message: 'Tối thiểu 6 ký tự' },
+              { required: true, message: t('auth.password') },
+              { min: 6, message: 'Min 6 chars' },
             ]}
           >
-            <Input.Password placeholder="Nhập mật khẩu..." />
+            <Input.Password placeholder={t('auth.password')} />
           </Form.Item>
 
           <Form.Item
             name="full_name"
-            label={<span className="text-xs font-semibold">Họ và tên (Tùy chọn)</span>}
+            label={<span className="text-xs font-semibold">{t('auth.fullName')}</span>}
           >
             <Input placeholder="VD: Nguyễn Văn A" />
           </Form.Item>
 
           <Form.Item
             name="role"
-            label={<span className="text-xs font-semibold">Vai trò / Phân quyền</span>}
+            label={<span className="text-xs font-semibold">{t('adminUsers.colRole')}</span>}
             rules={[{ required: true }]}
           >
             <Select
               options={[
-                { label: 'Người dùng thông thường (User)', value: 'user' },
-                { label: 'Quản trị viên hệ thống (Admin)', value: 'admin' },
+                { label: t('adminUsers.roleUser'), value: USER_ROLES.USER },
+                { label: t('adminUsers.roleAdmin'), value: USER_ROLES.ADMIN },
               ]}
             />
           </Form.Item>
 
           <Form.Item
             name="telegram_chat_id"
-            label={<span className="text-xs font-semibold">Telegram Chat ID (Tùy chọn)</span>}
+            label={<span className="text-xs font-semibold">{t('auth.telegramChatId')}</span>}
           >
             <Input placeholder="VD: 123456789" />
           </Form.Item>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <Button onClick={() => setCreateModalVisible(false)}>Hủy</Button>
+            <Button onClick={() => setCreateModalVisible(false)}>{t('common.cancel')}</Button>
             <Button
               type="primary"
               htmlType="submit"
               loading={createSubmitting}
               className="bg-blue-600 hover:bg-blue-500 font-semibold"
             >
-              Tạo Người Dùng
+              {t('common.create')}
             </Button>
           </div>
         </Form>
@@ -773,7 +771,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
         title={
           <div className="flex items-center gap-2 font-bold text-sm">
             <Edit className="w-4 h-4 text-blue-600" />
-            <span>Chỉnh Sửa & Phân Quyền: @{editingUser?.username}</span>
+            <span>{t('common.edit')}: @{editingUser?.username}</span>
           </div>
         }
         open={editModalVisible}
@@ -793,17 +791,17 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
         >
           <Form.Item
             name="full_name"
-            label={<span className="text-xs font-semibold">Họ và tên</span>}
+            label={<span className="text-xs font-semibold">{t('auth.fullName')}</span>}
           >
             <Input placeholder="Họ và tên người dùng" />
           </Form.Item>
 
           <Form.Item
             name="email"
-            label={<span className="text-xs font-semibold">Email</span>}
+            label={<span className="text-xs font-semibold">{t('auth.email')}</span>}
             rules={[
-              { required: true, message: 'Vui lòng nhập email' },
-              { type: 'email', message: 'Email không hợp lệ' },
+              { required: true, message: t('auth.email') },
+              { type: 'email', message: 'Email invalid' },
             ]}
           >
             <Input placeholder="Email" />
@@ -811,35 +809,28 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
 
           <Form.Item
             name="role"
-            label={<span className="text-xs font-semibold">Vai trò / Phân quyền</span>}
+            label={<span className="text-xs font-semibold">{t('adminUsers.colRole')}</span>}
             rules={[{ required: true }]}
-            help={
-              editingUser?.id === currentUser?.id ? (
-                <span className="text-[11px] text-amber-500">
-                  Lưu ý: Bạn đang chỉnh sửa tài khoản của chính mình.
-                </span>
-              ) : undefined
-            }
           >
             <Select
               options={[
-                { label: 'Người dùng thông thường (User)', value: 'user' },
-                { label: 'Quản trị viên hệ thống (Admin)', value: 'admin' },
+                { label: t('adminUsers.roleUser'), value: USER_ROLES.USER },
+                { label: t('adminUsers.roleAdmin'), value: USER_ROLES.ADMIN },
               ]}
             />
           </Form.Item>
 
           <Form.Item
             name="telegram_chat_id"
-            label={<span className="text-xs font-semibold">Telegram Chat ID</span>}
+            label={<span className="text-xs font-semibold">{t('auth.telegramChatId')}</span>}
           >
             <Input placeholder="Telegram Chat ID" />
           </Form.Item>
 
           <Form.Item
             name="password"
-            label={<span className="text-xs font-semibold">Đặt lại mật khẩu mới (Để trống nếu giữ nguyên)</span>}
-            rules={[{ min: 6, message: 'Mật khẩu tối thiểu 6 ký tự' }]}
+            label={<span className="text-xs font-semibold">{t('auth.password')}</span>}
+            rules={[{ min: 6, message: 'Min 6 chars' }]}
           >
             <Input.Password placeholder="Nhập mật khẩu mới nếu muốn đổi..." />
           </Form.Item>
@@ -851,7 +842,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
                 setEditingUser(null);
               }}
             >
-              Hủy
+              {t('common.cancel')}
             </Button>
             <Button
               type="primary"
@@ -859,7 +850,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
               loading={editSubmitting}
               className="bg-blue-600 hover:bg-blue-500 font-semibold"
             >
-              Lưu Thay Đổi
+              {t('common.save')}
             </Button>
           </div>
         </Form>

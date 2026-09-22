@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import { Clock } from 'lucide-react';
 import { PriceHistory, PortfolioPosition } from '../types';
 import { getPriceHistory } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HistoryChartModalProps {
   visible: boolean;
@@ -29,6 +30,7 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
   position,
   onClose,
 }) => {
+  const { t, language } = useLanguage();
   const [data, setData] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [limit, setLimit] = useState<number>(100);
@@ -113,9 +115,9 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
 
           <Segmented
             options={[
-              { label: '30 điểm', value: 30 },
-              { label: '100 điểm', value: 100 },
-              { label: '300 điểm', value: 300 },
+              { label: t('historyChart.points30'), value: 30 },
+              { label: t('historyChart.points100'), value: 100 },
+              { label: t('historyChart.points300'), value: 300 },
             ]}
             value={limit}
             onChange={(val) => setLimit(val as number)}
@@ -132,27 +134,27 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
         {/* Metric Summary Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           <div>
-            <span className="text-slate-500 dark:text-slate-400">Giá vốn:</span>
+            <span className="text-slate-500 dark:text-slate-400">{t('portfolio.colBuyPrice')}:</span>
             <span className="ml-1.5 font-bold text-blue-600 dark:text-blue-400 mono-font">
-              {buyPrice ? `${buyPrice.toFixed(2)}` : 'Chưa có'}
+              {buyPrice ? `${buyPrice.toFixed(2)}` : '--'}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400">Chốt lời (TP):</span>
+            <span className="text-slate-500 dark:text-slate-400">{t('portfolio.colTakeProfit')}:</span>
             <span className="ml-1.5 font-bold text-emerald-600 dark:text-emerald-400 mono-font">
-              {tpPrice ? `${tpPrice.toFixed(2)} (+${position?.tp_pct}%)` : 'Chưa set'}
+              {tpPrice ? `${tpPrice.toFixed(2)} (+${position?.tp_pct}%)` : '--'}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400">Cắt lỗ (SL):</span>
+            <span className="text-slate-500 dark:text-slate-400">{t('portfolio.colStopLoss')}:</span>
             <span className="ml-1.5 font-bold text-rose-600 dark:text-rose-400 mono-font">
-              {slPrice ? `${slPrice.toFixed(2)} (-${position?.sl_pct}%)` : 'Chưa set'}
+              {slPrice ? `${slPrice.toFixed(2)} (-${position?.sl_pct}%)` : '--'}
             </span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400">Khối lượng:</span>
+            <span className="text-slate-500 dark:text-slate-400">{t('screener.colVolume')}:</span>
             <span className="ml-1.5 font-bold text-slate-800 dark:text-slate-200 mono-font">
-              {latest ? `${latest.volume.toLocaleString('vi-VN')} CP` : '--'}
+              {latest ? `${latest.volume.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} ${t('portfolio.shares')}` : '--'}
             </span>
           </div>
         </div>
@@ -161,13 +163,13 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
         <div className="bg-slate-50/50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 h-[380px] relative">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-slate-950/50 backdrop-blur-sm z-10">
-              <Spin tip="Đang tải dữ liệu chuỗi thời gian..." />
+              <Spin tip={t('historyChart.loadingData')} />
             </div>
           ) : null}
 
           {chartData.length === 0 && !loading ? (
             <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">
-              Chưa có dữ liệu lịch sử biến động cho mã này. Dữ liệu sẽ được ghi nhận sau mỗi chu kỳ quét.
+              {t('historyChart.noData')}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -209,13 +211,13 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
                             <Clock className="w-3.5 h-3.5" /> {d.timeLabel}
                           </p>
                           <p className="font-bold text-slate-900 dark:text-white mono-font text-sm">
-                            Giá: {d.price.toFixed(2)} (x1,000đ)
+                            {t('historyChart.price')}: {d.price.toFixed(2)} (x1,000đ)
                           </p>
                           <p className="text-slate-600 dark:text-slate-300 mono-font">
-                            Khối lượng: {d.volume.toLocaleString('vi-VN')}
+                            {t('historyChart.volume')}: {d.volume.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
                           </p>
                           <p className={`font-semibold mono-font ${d.change_pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                            Biến động: {d.change_pct >= 0 ? '+' : ''}{d.change_pct}%
+                            {t('historyChart.change')}: {d.change_pct >= 0 ? '+' : ''}{d.change_pct}%
                           </p>
                         </div>
                       );
@@ -231,7 +233,7 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
                     y={buyPrice}
                     stroke="#2563EB"
                     strokeWidth={1.5}
-                    label={{ value: `Vốn: ${buyPrice.toFixed(2)}`, fill: '#2563EB', fontSize: 10, position: 'right' }}
+                    label={{ value: `${t('historyChart.cost')}: ${buyPrice.toFixed(2)}`, fill: '#2563EB', fontSize: 10, position: 'right' }}
                   />
                 )}
                 {tpPrice && (
@@ -241,7 +243,7 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
                     stroke="#10B981"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
-                    label={{ value: `TP: ${tpPrice.toFixed(2)}`, fill: '#10B981', fontSize: 10, position: 'right' }}
+                    label={{ value: `${t('historyChart.tp')}: ${tpPrice.toFixed(2)}`, fill: '#10B981', fontSize: 10, position: 'right' }}
                   />
                 )}
                 {slPrice && (
@@ -251,7 +253,7 @@ export const HistoryChartModal: React.FC<HistoryChartModalProps> = ({
                     stroke="#EF4444"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
-                    label={{ value: `SL: ${slPrice.toFixed(2)}`, fill: '#EF4444', fontSize: 10, position: 'right' }}
+                    label={{ value: `${t('historyChart.sl')}: ${slPrice.toFixed(2)}`, fill: '#EF4444', fontSize: 10, position: 'right' }}
                   />
                 )}
 

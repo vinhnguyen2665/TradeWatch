@@ -27,9 +27,11 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Globe,
 } from 'lucide-react';
 import { SystemSettings, UserAIConfig, AIProviderType } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   getSettings,
   updateSettings,
@@ -37,6 +39,12 @@ import {
   getUserAIConfig,
   updateUserAIConfig,
 } from '../services/api';
+import {
+  LANGUAGE_OPTIONS,
+  USER_ROLES,
+  BOT_STATUS,
+  ROLE_LABELS,
+} from '../constants';
 
 interface SettingsDrawerProps {
   visible: boolean;
@@ -52,7 +60,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   focusField,
 }) => {
   const { user, updateProfile } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { t, language, setLanguage } = useLanguage();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
 
   const [form] = Form.useForm();
   const adminChatIdWatch = Form.useWatch('telegram_chat_id', form);
@@ -62,7 +71,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const [settingsData, setSettingsData] = useState<SystemSettings | null>(null);
 
   // Active Tab state: Nếu là admin mặc định mở 'system', nếu user thường thì mặc định mở 'ai'
-  const [activeTab, setActiveTab] = useState<'system' | 'ai' | 'telegram'>('ai');
+  const [activeTab, setActiveTab] = useState<'system' | 'ai' | 'telegram' | 'language'>('ai');
 
   // Telegram Chat ID cá nhân của User
   const [userTelegramChatId, setUserTelegramChatId] = useState<string>(user?.telegram_chat_id || '');
@@ -190,7 +199,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         const sysPayload: any = {
           polling_interval_sec: Number(formValues.polling_interval_sec || 10),
           alert_cooldown_min: Number(formValues.alert_cooldown_min || 30),
-          bot_status: formValues.bot_status ? 'RUNNING' : 'PAUSED',
+          bot_status: formValues.bot_status ? BOT_STATUS.RUNNING : BOT_STATUS.PAUSED,
           trade_hours_only: Boolean(formValues.trade_hours_only),
           telegram_chat_id: formValues.telegram_chat_id || trimmedUserChatId,
         };
@@ -286,90 +295,90 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         items={[
           ...(isAdmin
             ? [
-                {
-                  key: 'system',
-                  label: (
-                    <span className="flex items-center gap-1.5 font-semibold text-xs">
-                      <Clock className="w-3.5 h-3.5 text-blue-500" />
-                      Hệ Thống & Quét Giá
-                    </span>
-                  ),
-                  children: (
-              <Form
-                form={form}
-                layout="vertical"
-                className="space-y-4 pt-1"
-              >
-                {/* Bot Status Switch */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800 dark:text-white">Trạng thái Quét Tự động</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bật hoặc tạm dừng toàn bộ scheduler</div>
-                  </div>
-                  <Form.Item name="bot_status" valuePropName="checked" noStyle>
-                    <Switch checkedChildren="RUNNING" unCheckedChildren="PAUSED" />
-                  </Form.Item>
-                </div>
-
-                {/* Trade Hours Only Switch */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="pr-4">
-                    <div className="text-sm font-semibold text-slate-800 dark:text-white">Chỉ Quét Trong Giờ Giao Dịch</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Chỉ chạy crawler vào: 09:00 - 11:30 & 13:00 - 15:00 (T2 - T6). Tạm nghỉ vào buổi tối, giờ nghỉ trưa & cuối tuần.
+              {
+                key: 'system',
+                label: (
+                  <span className="flex items-center gap-1.5 font-semibold text-xs">
+                    <Clock className="w-3.5 h-3.5 text-blue-500" />
+                    Hệ Thống & Quét Giá
+                  </span>
+                ),
+                children: (
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    className="space-y-4 pt-1"
+                  >
+                    {/* Bot Status Switch */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800 dark:text-white">Trạng thái Quét Tự động</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bật hoặc tạm dừng toàn bộ scheduler</div>
+                      </div>
+                      <Form.Item name="bot_status" valuePropName="checked" noStyle>
+                        <Switch checkedChildren="RUNNING" unCheckedChildren="PAUSED" />
+                      </Form.Item>
                     </div>
-                  </div>
-                  <Form.Item name="trade_hours_only" valuePropName="checked" noStyle>
-                    <Switch checkedChildren="BẬT" unCheckedChildren="TẮT" />
-                  </Form.Item>
-                </div>
 
-                {/* Polling Interval */}
-                <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
-                  <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400 font-semibold text-xs uppercase">
-                    <Clock className="w-4 h-4" /> Chu kỳ Quét Giá (Dynamic Polling)
-                  </div>
-                  <Form.Item
-                    name="polling_interval_sec"
-                    label={<span className="text-xs font-medium">Khoảng thời gian giữa 2 lần quét (giây)</span>}
-                    rules={[{ required: true, message: 'Nhập thời gian quét từ 5 đến 3600 giây' }]}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Thay đổi sẽ áp dụng ngay tức thì (Hot-reload) mà không cần restart backend.</span>}
-                  >
-                    <InputNumber
-                      min={5}
-                      max={3600}
-                      step={5}
-                      className="w-full mono-font"
-                    />
-                  </Form.Item>
-                </Card>
+                    {/* Trade Hours Only Switch */}
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                      <div className="pr-4">
+                        <div className="text-sm font-semibold text-slate-800 dark:text-white">Chỉ Quét Trong Giờ Giao Dịch</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Chỉ chạy crawler vào: 09:00 - 11:30 & 13:00 - 15:00 (T2 - T6). Tạm nghỉ vào buổi tối, giờ nghỉ trưa & cuối tuần.
+                        </div>
+                      </div>
+                      <Form.Item name="trade_hours_only" valuePropName="checked" noStyle>
+                        <Switch checkedChildren="BẬT" unCheckedChildren="TẮT" />
+                      </Form.Item>
+                    </div>
 
-                {/* Anti-spam Cooldown */}
-                <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
-                  <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-semibold text-xs uppercase">
-                    <ShieldAlert className="w-4 h-4" /> Chống Spam Cảnh Báo (Cooldown)
-                  </div>
-                  <Form.Item
-                    name="alert_cooldown_min"
-                    label={<span className="text-xs font-medium">Thời gian chờ giữa 2 cảnh báo cùng loại cho 1 mã (phút)</span>}
-                    rules={[{ required: true, message: 'Nhập thời gian cooldown từ 1 đến 1440 phút' }]}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Tránh tràn ngập tin nhắn Telegram khi giá dao động quanh mốc TP/SL.</span>}
-                  >
-                    <InputNumber
-                      min={1}
-                      max={1440}
-                      step={5}
-                      className="w-full mono-font"
-                    />
-                  </Form.Item>
-                </Card>
-              </Form>
-            ),
-          },
-        ]
-      : []),
-    {
-      key: 'ai',
+                    {/* Polling Interval */}
+                    <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
+                      <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400 font-semibold text-xs uppercase">
+                        <Clock className="w-4 h-4" /> Chu kỳ Quét Giá (Dynamic Polling)
+                      </div>
+                      <Form.Item
+                        name="polling_interval_sec"
+                        label={<span className="text-xs font-medium">Khoảng thời gian giữa 2 lần quét (giây)</span>}
+                        rules={[{ required: true, message: 'Nhập thời gian quét từ 5 đến 3600 giây' }]}
+                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Thay đổi sẽ áp dụng ngay tức thì (Hot-reload) mà không cần restart backend.</span>}
+                      >
+                        <InputNumber
+                          min={5}
+                          max={3600}
+                          step={5}
+                          className="w-full mono-font"
+                        />
+                      </Form.Item>
+                    </Card>
+
+                    {/* Anti-spam Cooldown */}
+                    <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
+                      <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-semibold text-xs uppercase">
+                        <ShieldAlert className="w-4 h-4" /> Chống Spam Cảnh Báo (Cooldown)
+                      </div>
+                      <Form.Item
+                        name="alert_cooldown_min"
+                        label={<span className="text-xs font-medium">Thời gian chờ giữa 2 cảnh báo cùng loại cho 1 mã (phút)</span>}
+                        rules={[{ required: true, message: 'Nhập thời gian cooldown từ 1 đến 1440 phút' }]}
+                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Tránh tràn ngập tin nhắn Telegram khi giá dao động quanh mốc TP/SL.</span>}
+                      >
+                        <InputNumber
+                          min={1}
+                          max={1440}
+                          step={5}
+                          className="w-full mono-font"
+                        />
+                      </Form.Item>
+                    </Card>
+                  </Form>
+                ),
+              },
+            ]
+            : []),
+          {
+            key: 'ai',
             label: (
               <span className="flex items-center gap-1.5 font-semibold text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
@@ -835,8 +844,58 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     loading={testingTelegram}
                     className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-semibold"
                   >
-                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot
+                    {t('settings.testAlertBtn')}
                   </Button>
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'language',
+            label: (
+              <span className="flex items-center gap-1.5 font-semibold text-xs">
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                {t('settings.tabLanguage')}
+              </span>
+            ),
+            children: (
+              <div className="space-y-4 pt-1">
+                <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-4" bodyStyle={{ padding: '16px' }}>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t('settings.langDesc')}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    {LANGUAGE_OPTIONS.map((opt) => {
+                      const isSelected = language === opt.code;
+                      return (
+                        <div
+                          key={opt.code}
+                          onClick={() => setLanguage(opt.code)}
+                          className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                            isSelected
+                              ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-2xl">{opt.flag}</span>
+                            <div>
+                              <div className={`text-sm font-bold ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                                {opt.label}
+                              </div>
+                              <div className="text-[11px] text-slate-400 uppercase font-mono">{opt.code}</div>
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </Card>
               </div>
             ),

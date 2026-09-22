@@ -80,6 +80,7 @@ import {
   getUserAIConfig,
   updateUserAIConfig,
 } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface PortfolioAllocationModalProps {
   visible: boolean;
@@ -142,6 +143,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
   existingPositions = [],
   onOpenSettings,
 }) => {
+  const { t, language } = useLanguage();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
   const [applying, setApplying] = useState<boolean>(false);
@@ -436,7 +438,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       const positionsToImport = currentResult.data.summary_table.map((item) => {
         // Hệ thống lưu buy_price là x1,000 VND (Ví dụ: 28500 VND -> 28.5)
         const priceK = item.current_price > 1000 ? item.current_price / 1000.0 : item.current_price;
-        
+
         let tpPct = 8.0;
         let slPct = 5.0;
         if (item.asset_class.includes('VN30')) {
@@ -953,7 +955,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
 
   const historyColumns = [
     {
-      title: 'Thời Gian Lập',
+      title: t('allocation.colCreatedAt'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,
@@ -968,7 +970,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       },
     },
     {
-      title: 'Mô Hình AI',
+      title: t('allocation.colModel'),
       key: 'ai_model_info',
       width: 175,
       render: (_: any, record: PortfolioAllocationRecord) => {
@@ -989,7 +991,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       },
     },
     {
-      title: 'Tổng Vốn',
+      title: t('allocation.colTotalCap'),
       dataIndex: 'total_capital',
       key: 'total_capital',
       width: 135,
@@ -1000,7 +1002,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       ),
     },
     {
-      title: 'Khẩu Vị',
+      title: t('allocation.colRisk'),
       key: 'risk_profile',
       width: 120,
       render: (_: any, record: PortfolioAllocationRecord) => {
@@ -1010,7 +1012,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       },
     },
     {
-      title: 'Cổ Phiếu Phân Bổ',
+      title: t('allocation.colTickers'),
       key: 'tickers',
       render: (_: any, record: PortfolioAllocationRecord) => {
         const items = record.data?.summary_table || [];
@@ -1030,7 +1032,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       },
     },
     {
-      title: 'Kỳ Vọng Sinh Lời',
+      title: t('allocation.colYield'),
       key: 'yield',
       width: 150,
       render: (_: any, record: PortfolioAllocationRecord) => (
@@ -1040,7 +1042,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       ),
     },
     {
-      title: 'Thao Tác',
+      title: t('allocation.colActions'),
       key: 'actions',
       width: 200,
       align: 'right' as const,
@@ -1108,10 +1110,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
             </div>
             <div>
               <div className="font-bold text-base bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                AI Portfolio Allocation & Capital Strategy
+                {t('allocation.modalHeaderTitle')}
               </div>
               <div className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                Phân bổ vốn đa mã & hoạch định chiến lược danh mục theo khẩu vị rủi ro
+                {t('allocation.modalSubtitle')}
               </div>
             </div>
           </div>
@@ -1139,7 +1141,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
               key: 'create',
               label: (
                 <span className="flex items-center gap-1.5 font-semibold text-sm">
-                  <Layers className="w-4 h-4" /> Thiết lập Danh Mục Đa Mã
+                  <Layers className="w-4 h-4" /> {t('allocation.tabCreate')}
                 </span>
               ),
               children: (
@@ -1153,9 +1155,9 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-slate-900/80 dark:via-indigo-950/20 dark:to-slate-900/40 border border-blue-100 dark:border-blue-900/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-sm uppercase">
-                        <DollarSign className="w-4 h-4" /> 1. Tổng Số Vốn Đầu Tư Dự Kiến (VND)
+                        <DollarSign className="w-4 h-4" /> 1. {t('allocation.totalCapital')}
                       </div>
-                      
+
                       {existingPositions.length > 0 && (
                         <Button
                           type="default"
@@ -1164,7 +1166,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                           onClick={handleImportAllWatchedPositions}
                           className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 font-semibold"
                         >
-                          Nạp nhanh {existingPositions.length} mã đang theo dõi
+                          {t('allocation.quickImport', { count: existingPositions.length })}
                         </Button>
                       )}
                     </div>
@@ -1186,7 +1188,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
 
                     {/* Quick Capital Selection Chips */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">Chọn nhanh vốn:</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{t('allocation.quickCap')}</span>
                       {[
                         { label: '50 Triệu', val: 50000000 },
                         { label: '100 Triệu', val: 100000000 },
@@ -1250,11 +1252,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                                 key={t}
                                 type="button"
                                 onClick={() => toggleTickerInGroup('vn30_tickers', t)}
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                                  watchedTickers.includes(t)
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${watchedTickers.includes(t)
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300'
                                     : 'bg-blue-100/70 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-200'
-                                }`}
+                                  }`}
                               >
                                 {watchedTickers.includes(t) ? `⭐ ${t}` : t}
                               </button>
@@ -1297,11 +1298,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                                 key={t}
                                 type="button"
                                 onClick={() => toggleTickerInGroup('midcap_tickers', t)}
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                                  watchedTickers.includes(t)
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${watchedTickers.includes(t)
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300'
                                     : 'bg-emerald-100/70 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200'
-                                }`}
+                                  }`}
                               >
                                 {watchedTickers.includes(t) ? `⭐ ${t}` : t}
                               </button>
@@ -1344,11 +1344,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                                 key={t}
                                 type="button"
                                 onClick={() => toggleTickerInGroup('penny_tickers', t)}
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                                  watchedTickers.includes(t)
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors ${watchedTickers.includes(t)
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300'
                                     : 'bg-amber-100/70 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 hover:bg-amber-200'
-                                }`}
+                                  }`}
                               >
                                 {watchedTickers.includes(t) ? `⭐ ${t}` : t}
                               </button>
@@ -1362,7 +1361,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   {/* Step 3: Strategy Preset Selection */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-sm uppercase">
-                      <ShieldCheck className="w-4 h-4 text-blue-600" /> 3. Khẩu Vị Rủi Ro & Tỷ Lệ Phân Bổ
+                      <ShieldCheck className="w-4 h-4 text-blue-600" /> 3. {t('allocation.riskProfile')}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1370,11 +1369,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                         <div
                           key={preset.key}
                           onClick={() => handleSelectPreset(preset.key)}
-                          className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
-                            selectedPreset === preset.key
+                          className={`cursor-pointer p-3.5 rounded-xl border transition-all ${selectedPreset === preset.key
                               ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
                               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
@@ -1396,7 +1394,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   <div className="p-4 rounded-xl bg-slate-50/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase">
-                        <Sparkles className="w-4 h-4" /> 4. Lựa Chọn Cố Vấn AI (Engine Đã Đăng Ký Key)
+                        <Sparkles className="w-4 h-4" /> 4. {t('allocation.aiAdvisor')}
                       </div>
                       <Button
                         type="link"
@@ -1405,7 +1403,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                         onClick={() => onOpenSettings?.('ai_config')}
                         className="p-0 h-auto text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1"
                       >
-                        Quản lý / Đổi API Key trong Cài đặt ↗
+                        {t('allocation.manageKey')}
                       </Button>
                     </div>
 
@@ -1413,10 +1411,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                       <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 space-y-3">
                         <div className="flex items-center gap-2 font-bold text-sm">
                           <AlertCircle className="w-5 h-5 text-amber-600" />
-                          Chưa Có AI Engine Nào Được Đăng Ký API Key
+                          {t('allocation.noAiKey')}
                         </div>
                         <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-                          Tài khoản của bạn chưa cấu hình API Key cho bất kỳ AI Engine nào (Google Gemini, OpenAI ChatGPT hoặc Local AI). Vui lòng nhấn nút bên dưới để mở phần Cài Đặt và đăng ký API Key của bạn.
+                          {t('allocation.noAiKeyDesc')}
                         </p>
                         <Button
                           type="primary"
@@ -1424,7 +1422,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                           onClick={() => onOpenSettings?.('ai_config')}
                           className="bg-amber-600 hover:bg-amber-500 font-semibold text-xs"
                         >
-                          Mở Cài Đặt Để Đăng Ký Key AI
+                          {t('allocation.openSettingsBtn')}
                         </Button>
                       </div>
                     ) : (
@@ -1432,7 +1430,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                         {/* Segmented Provider Switcher - Chỉ hiển thị các engine đã được đăng ký key */}
                         <div>
                           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-                            <span>Chọn Nền Tảng AI Engine ({configuredProviders.length} động cơ sẵn sàng):</span>
+                            <span>{t('allocation.selectEngine')} ({configuredProviders.length}):</span>
                             <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" /> ĐÃ XÁC THỰC KEY
                             </Tag>
@@ -1461,7 +1459,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                           label={
                             <div className="flex items-center justify-between w-full">
                               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                Mô hình AI ({selectedProvider === 'gemini' ? 'Google Gemini' : selectedProvider === 'openai' ? 'OpenAI ChatGPT' : 'Local AI Engine'})
+                                {t('allocation.selectModel')} ({selectedProvider === 'gemini' ? 'Google Gemini' : selectedProvider === 'openai' ? 'OpenAI ChatGPT' : 'Local AI Engine'})
                               </span>
                               <Button
                                 type="link"
@@ -1471,51 +1469,51 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                                 icon={<RefreshCw className={`w-3.5 h-3.5 ${loadingModels ? 'animate-spin' : ''}`} />}
                                 className="p-0 h-auto text-xs text-blue-600 dark:text-blue-400 font-medium"
                               >
-                                Đồng bộ lại model
+                                {t('common.refresh')}
                               </Button>
                             </div>
                           }
                           className="mb-1"
                         >
-                      <Select
-                        className="w-full font-medium"
-                        loading={loadingModels}
-                        placeholder={loadingModels ? "Đang tải danh sách models..." : "Chọn model AI phân tích..."}
-                        showSearch
-                        optionFilterProp="label"
-                        options={availableModels.map((m) => ({
-                          value: m.id,
-                          label: `${m.is_recommended ? '⚡ ' : ''}${m.display_name} (${m.id})`,
-                          raw: m,
-                        }))}
-                        optionRender={(option) => {
-                          const m = option.data.raw as GeminiModelInfo;
-                          if (!m) return option.label;
-                          return (
-                            <div className="py-1">
-                              <div className="flex items-center justify-between">
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                  {m.is_recommended ? '⚡ ' : ''}{m.display_name}
-                                </span>
-                                {m.is_recommended && (
-                                  <Tag color="blue" className="text-[10px] font-bold">
-                                    KHUYÊN DÙNG
-                                  </Tag>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                                {m.id}
-                              </div>
-                              {m.description && (
-                                <div className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
-                                  {m.description}
+                          <Select
+                            className="w-full font-medium"
+                            loading={loadingModels}
+                            placeholder={loadingModels ? "Đang tải danh sách models..." : "Chọn model AI phân tích..."}
+                            showSearch
+                            optionFilterProp="label"
+                            options={availableModels.map((m) => ({
+                              value: m.id,
+                              label: `${m.is_recommended ? '⚡ ' : ''}${m.display_name} (${m.id})`,
+                              raw: m,
+                            }))}
+                            optionRender={(option) => {
+                              const m = option.data.raw as GeminiModelInfo;
+                              if (!m) return option.label;
+                              return (
+                                <div className="py-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                      {m.is_recommended ? '⚡ ' : ''}{m.display_name}
+                                    </span>
+                                    {m.is_recommended && (
+                                      <Tag color="blue" className="text-[10px] font-bold">
+                                        {t('allocation.recommended')}
+                                      </Tag>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                    {m.id}
+                                  </div>
+                                  {m.description && (
+                                    <div className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-1 mt-0.5">
+                                      {m.description}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        }}
-                      />
-                    </Form.Item>
+                              );
+                            }}
+                          />
+                        </Form.Item>
                       </>
                     )}
                   </div>
@@ -1530,7 +1528,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                     icon={<Sparkles className="w-5 h-5" />}
                     className="h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:opacity-95 shadow-lg shadow-blue-500/25 font-bold text-base rounded-xl"
                   >
-                    {loading ? 'Đang Phân Tích & Hoạch Định Bằng Gemini AI...' : 'Tạo Danh Mục Phân Bổ Bằng AI'}
+                    {loading ? t('allocation.generatingBtn') : t('allocation.generateBtn')}
                   </Button>
                 </Form>
               ),
@@ -1540,7 +1538,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
               disabled: !currentResult,
               label: (
                 <span className="flex items-center gap-1.5 font-semibold text-sm">
-                  <PieChartIcon className="w-4 h-4" /> Kết Quả Phân Bổ AI
+                  <PieChartIcon className="w-4 h-4" /> {t('allocation.tabResult')}
                 </span>
               ),
               children: currentResult ? (
@@ -1556,7 +1554,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                             onClick={() => handleExportPdf(currentResult)}
                             className="bg-white/10 hover:bg-white/20 text-white border-white/20 font-semibold text-xs flex items-center gap-1 backdrop-blur-sm"
                           >
-                            Xuất Báo Cáo PDF
+                            {t('common.exportPdf')}
                           </Button>
                           <Tag color="cyan" className="font-bold uppercase text-[11px]">
                             {currentResult.data.risk_profile} STRATEGY
@@ -1570,13 +1568,13 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                               {currentResult.data.ai_provider === 'openai'
                                 ? 'OpenAI'
                                 : currentResult.data.ai_provider === 'local'
-                                ? 'Local AI'
-                                : 'Google Gemini'}
+                                  ? 'Local AI'
+                                  : 'Google Gemini'}
                               {currentResult.data.ai_model ? ` • ${currentResult.data.ai_model}` : ''}
                             </span>
                           </Tag>
                           <span className="text-xs text-slate-400">
-                            Khởi tạo: {new Date(currentResult.created_at).toLocaleString('vi-VN')}
+                            {t('allocation.createdDate')} {new Date(currentResult.created_at).toLocaleString('vi-VN')}
                           </span>
                         </div>
                         <h2 className="text-2xl font-black text-white mt-1 mono-font">
@@ -1589,7 +1587,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
 
                       <div className="flex flex-col items-start md:items-end justify-center p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 min-w-[200px]">
                         <span className="text-[11px] text-slate-300 uppercase font-semibold">
-                          Kỳ Vọng Sinh Lời Danh Mục
+                          {t('allocation.expectedYield')}
                         </span>
                         <span className="text-xl font-bold text-emerald-400 mono-font mt-0.5">
                           {currentResult.data.estimated_portfolio_yield || '+20% - +30%/năm'}
@@ -1603,7 +1601,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                     {/* Donut Chart */}
                     <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-center shadow-sm">
                       <div className="text-center font-bold text-sm text-slate-800 dark:text-slate-200 mb-2">
-                        Tỷ Lệ Phân Bổ Từng Mã
+                        {t('allocation.pieChartTitle')}
                       </div>
                       <div className="h-56 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -1634,7 +1632,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                     <div className="lg:col-span-2">
                       <Card className="rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-0 overflow-hidden">
                         <div className="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center justify-between">
-                          <span>Bảng Chi Tiết Phân Bổ ({currentResult.data.summary_table.length} mã cổ phiếu)</span>
+                          <span>{t('allocation.summaryTableTitle')} ({currentResult.data.summary_table.length})</span>
                           <span className="text-xs font-normal text-slate-500">
                             Chuẩn giao dịch lô 100 CP
                           </span>
@@ -1656,7 +1654,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-bold text-base text-slate-800 dark:text-slate-100">
                         <TrendingUp className="w-5 h-5 text-blue-600" />
-                        <span>Chi Tiết Chiến Lược Từng Vị Thế ({currentResult.data.detailed_strategies?.length || 0} mã)</span>
+                        <span>{t('allocation.detailedStrategiesTitle')} ({currentResult.data.detailed_strategies?.length || 0})</span>
                       </div>
                     </div>
 
@@ -1664,12 +1662,12 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                       {currentResult.data.detailed_strategies?.map((strat) => {
                         const isSafe = strat.badge_type === 'SAFE' || strat.asset_class.includes('VN30');
                         const isMedium = strat.badge_type === 'MEDIUM' || strat.asset_class.includes('Midcap');
-                        
+
                         const borderCls = isSafe
                           ? 'border-blue-300 dark:border-blue-900 bg-blue-50/20 dark:bg-slate-900'
                           : isMedium
-                          ? 'border-emerald-300 dark:border-emerald-900 bg-emerald-50/20 dark:bg-slate-900'
-                          : 'border-amber-300 dark:border-amber-900 bg-amber-50/20 dark:bg-slate-900';
+                            ? 'border-emerald-300 dark:border-emerald-900 bg-emerald-50/20 dark:bg-slate-900'
+                            : 'border-amber-300 dark:border-amber-900 bg-amber-50/20 dark:bg-slate-900';
 
                         const badgeColor = isSafe ? 'blue' : isMedium ? 'green' : 'gold';
 
@@ -1736,7 +1734,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   {/* Market Cycle & Risk Rules */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
                     <div className="font-bold text-xs uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" /> Kỷ Luật Giao Dịch & Quản Trị Rủi Ro
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t('allocation.riskRulesTitle')}
                     </div>
                     <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-400 space-y-1">
                       {currentResult.data.risk_management_rules?.map((rule, idx) => (
@@ -1753,7 +1751,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                         onClick={() => setActiveTab('create')}
                         className="font-medium"
                       >
-                        Thiết Lập Lại Danh Mục Mới
+                        {t('allocation.resetBtn')}
                       </Button>
                       <Button
                         type="default"
@@ -1761,7 +1759,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                         onClick={() => handleExportPdf(currentResult)}
                         className="font-semibold flex items-center gap-1.5 border-blue-300 dark:border-blue-700 hover:text-blue-600"
                       >
-                        Xuất Báo Cáo PDF
+                        {t('common.exportPdf')}
                       </Button>
                     </div>
 
@@ -1773,7 +1771,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                       icon={<Zap className="w-4 h-4 text-amber-300" />}
                       className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-lg shadow-emerald-600/25 px-6"
                     >
-                      Áp Dụng Tất Cả {currentResult.data.summary_table.length} Mã Vào Danh Mục Theo Dõi (Bật Bot Canh TP/SL)
+                      {t('allocation.applyBtn', { count: currentResult.data.summary_table.length })}
                     </Button>
                   </div>
                 </div>
@@ -1784,7 +1782,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
               label: (
                 <span className="flex items-center gap-1.5 font-semibold text-sm">
                   <History className="w-4 h-4 text-purple-500" />
-                  Lịch Sử Phân Bổ AI {historyList.length > 0 && `(${historyList.length})`}
+                  {t('allocation.tabHistory')} {historyList.length > 0 && `(${historyList.length})`}
                 </span>
               ),
               children: (
@@ -1792,10 +1790,10 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40">
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 m-0 text-sm">
-                        <History className="w-4 h-4 text-purple-600" /> Danh Sách Kết Quả Phân Bổ AI Đã Lưu
+                        <History className="w-4 h-4 text-purple-600" /> {t('allocation.historyListTitle')}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-0">
-                        Xem lại các kịch bản phân bổ vốn đã được AI tính toán trong quá khứ, tra cứu chi tiết hoặc xuất ra file PDF.
+                        {t('allocation.historyListDesc')}
                       </p>
                     </div>
                     <Button
@@ -1805,7 +1803,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                       icon={<RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />}
                       className="text-xs font-semibold flex items-center gap-1"
                     >
-                      Làm mới
+                      {t('common.refresh')}
                     </Button>
                   </div>
 

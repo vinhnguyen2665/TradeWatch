@@ -11,6 +11,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { PortfolioPosition } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface PositionTableProps {
   positions: PortfolioPosition[];
@@ -29,9 +30,10 @@ export const PositionTable: React.FC<PositionTableProps> = ({
   onDelete,
   onToggleActive,
 }) => {
+  const { language, t } = useLanguage();
   const columns: ColumnsType<PortfolioPosition> = [
     {
-      title: 'Mã CP & Doanh nghiệp',
+      title: `${t('portfolio.colTicker')} & ${t('portfolio.colCompany')}`,
       dataIndex: 'ticker',
       key: 'ticker',
       fixed: 'left',
@@ -47,14 +49,14 @@ export const PositionTable: React.FC<PositionTableProps> = ({
                 {ticker}
               </span>
               {isTriggeredTP && (
-                <Tooltip title="Đạt ngưỡng chốt lời">
+                <Tooltip title={t('portfolio.tpHit')}>
                   <Tag color="success" className="px-1.5 py-0 text-[10px] font-bold border-0">
                     TP HIT
                   </Tag>
                 </Tooltip>
               )}
               {isTriggeredSL && (
-                <Tooltip title="Chạm ngưỡng cắt lỗ">
+                <Tooltip title={t('portfolio.slHit')}>
                   <Tag color="error" className="px-1.5 py-0 text-[10px] font-bold border-0">
                     SL HIT
                   </Tag>
@@ -69,14 +71,14 @@ export const PositionTable: React.FC<PositionTableProps> = ({
               </Tooltip>
             )}
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-              {record.quantity.toLocaleString('vi-VN')} CP
+              {record.quantity.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')} {t('portfolio.shares')}
             </span>
           </div>
         );
       },
     },
     {
-      title: 'Giá vốn (x1K)',
+      title: `${t('portfolio.colBuyPrice')} (x1K)`,
       dataIndex: 'buy_price',
       key: 'buy_price',
       width: 120,
@@ -87,7 +89,7 @@ export const PositionTable: React.FC<PositionTableProps> = ({
       ),
     },
     {
-      title: 'Giá hiện tại (x1K)',
+      title: `${t('portfolio.colCurrentPrice')} (x1K)`,
       dataIndex: 'current_price',
       key: 'current_price',
       width: 140,
@@ -109,7 +111,7 @@ export const PositionTable: React.FC<PositionTableProps> = ({
       },
     },
     {
-      title: 'Giá trị Vị thế',
+      title: t('portfolio.colMarketValue'),
       key: 'market_value',
       width: 150,
       render: (_, record: PortfolioPosition) => {
@@ -117,17 +119,17 @@ export const PositionTable: React.FC<PositionTableProps> = ({
         return (
           <div className="flex flex-col">
             <span className="text-slate-800 dark:text-slate-200 font-medium mono-font text-sm">
-              {(valVND / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} Tr
+              {(valVND / 1000000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 })} {t('header.millionShort')}
             </span>
             <span className="text-[11px] text-slate-400 dark:text-slate-500">
-              Vốn: {(((record.buy_price * record.quantity) * 1000) / 1000000).toFixed(2)} Tr
+              {t('portfolio.cost')}: {(((record.buy_price * record.quantity) * 1000) / 1000000).toFixed(2)} {t('header.millionShort')}
             </span>
           </div>
         );
       },
     },
     {
-      title: 'Chốt lời (TP)',
+      title: t('portfolio.colTakeProfit'),
       key: 'tp',
       width: 130,
       render: (_, record: PortfolioPosition) => (
@@ -136,13 +138,13 @@ export const PositionTable: React.FC<PositionTableProps> = ({
             +{record.tp_pct}%
           </Tag>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mono-font">
-            Mục tiêu: {record.tp_price?.toFixed(2)}
+            {t('portfolio.target')}: {record.tp_price?.toFixed(2)}
           </span>
         </div>
       ),
     },
     {
-      title: 'Cắt lỗ (SL)',
+      title: t('portfolio.colStopLoss'),
       key: 'sl',
       width: 130,
       render: (_, record: PortfolioPosition) => (
@@ -151,13 +153,13 @@ export const PositionTable: React.FC<PositionTableProps> = ({
             -{record.sl_pct}%
           </Tag>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mono-font">
-            Ngưỡng: {record.sl_price?.toFixed(2)}
+            {t('portfolio.stop')}: {record.sl_price?.toFixed(2)}
           </span>
         </div>
       ),
     },
     {
-      title: 'Lãi / Lỗ (PnL)',
+      title: t('portfolio.colPnl'),
       key: 'pnl',
       width: 160,
       sorter: (a, b) => (a.pnl_pct ?? 0) - (b.pnl_pct ?? 0),
@@ -179,14 +181,14 @@ export const PositionTable: React.FC<PositionTableProps> = ({
               )}
             </div>
             <span className={`text-xs mono-font ${isProf ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-              {isProf ? '+' : ''}{(pnlVal / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} Tr VNĐ
+              {isProf ? '+' : ''}{(pnlVal / 1000000).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 })} {t('header.millionShort')} VND
             </span>
           </div>
         );
       },
     },
     {
-      title: 'Giám sát',
+      title: t('portfolio.colStatus'),
       dataIndex: 'is_active',
       key: 'is_active',
       width: 90,
@@ -200,13 +202,13 @@ export const PositionTable: React.FC<PositionTableProps> = ({
       ),
     },
     {
-      title: 'Thao tác',
+      title: t('portfolio.colActions'),
       key: 'actions',
       fixed: 'right',
       width: 140,
       render: (_, record: PortfolioPosition) => (
         <div className="flex items-center gap-1.5">
-          <Tooltip title="Xem biểu đồ lịch sử biến động">
+          <Tooltip title={t('portfolio.historyTooltip')}>
             <Button
               type="text"
               size="small"
@@ -216,7 +218,7 @@ export const PositionTable: React.FC<PositionTableProps> = ({
             />
           </Tooltip>
 
-          <Tooltip title="Chỉnh sửa vị thế">
+          <Tooltip title={t('portfolio.editTooltip')}>
             <Button
               type="text"
               size="small"
@@ -226,13 +228,13 @@ export const PositionTable: React.FC<PositionTableProps> = ({
             />
           </Tooltip>
 
-          <Tooltip title="Xóa khỏi danh mục">
+          <Tooltip title={t('portfolio.deleteTooltip')}>
             <Popconfirm
-              title={`Xác nhận xóa mã ${record.ticker}?`}
-              description="Hành động này sẽ xóa vị thế khỏi danh sách theo dõi."
+              title={`${t('portfolio.deleteConfirmTitle')} ${record.ticker}?`}
+              description={t('portfolio.deleteConfirmDesc')}
               onConfirm={() => onDelete(record.ticker)}
-              okText="Xóa"
-              cancelText="Hủy"
+              okText={t('common.delete')}
+              cancelText={t('common.cancel')}
               okButtonProps={{ danger: true }}
             >
               <Button
@@ -254,13 +256,13 @@ export const PositionTable: React.FC<PositionTableProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            Danh mục Theo dõi Realtime
+            {t('portfolio.title')}
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 font-semibold">
-              {positions.length} mã
+              {positions.length} {t('header.stocksUnit')}
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Tự động tính toán PnL, kiểm tra TP/SL mỗi chu kỳ quét
+            {t('portfolio.subtitle')}
           </p>
         </div>
       </div>
@@ -276,8 +278,8 @@ export const PositionTable: React.FC<PositionTableProps> = ({
         locale={{
           emptyText: (
             <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-              <p className="text-sm">Chưa có cổ phiếu nào trong danh mục theo dõi.</p>
-              <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">Nhấn "Thêm Mã Mới" hoặc sử dụng "Gợi ý Mã Kỹ thuật" để bắt đầu.</p>
+              <p className="text-sm">{t('portfolio.emptyText')}</p>
+              <p className="text-xs mt-1 text-slate-400 dark:text-slate-600">{t('portfolio.emptySubtext')}</p>
             </div>
           ),
         }}
@@ -285,3 +287,4 @@ export const PositionTable: React.FC<PositionTableProps> = ({
     </div>
   );
 };
+

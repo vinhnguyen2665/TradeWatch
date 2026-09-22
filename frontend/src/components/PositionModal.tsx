@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, InputNumber, Slider, Switch } from 'antd';
 import { Target, ShieldAlert } from 'lucide-react';
 import { PortfolioPosition, PositionFormData } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface PositionModalProps {
   visible: boolean;
@@ -22,6 +23,7 @@ export const PositionModal: React.FC<PositionModalProps> = ({
   onSubmit,
   loading,
 }) => {
+  const { t } = useLanguage();
   const [form] = Form.useForm<PositionFormData>();
   const [buyPrice, setBuyPrice] = useState<number>(30.0);
   const [tpPct, setTpPct] = useState<number>(7.0);
@@ -109,18 +111,18 @@ export const PositionModal: React.FC<PositionModalProps> = ({
       title={
         <span className="text-lg font-bold">
           {isEdit && editingPosition
-            ? `Chỉnh sửa Vị thế ${editingPosition.ticker}`
+            ? `${t('positionModal.editTitle')} ${editingPosition.ticker}`
             : initialData?.ticker
-            ? `Thêm ${initialData.ticker} vào Danh mục Theo dõi`
-            : 'Thêm Cổ phiếu vào Danh mục Theo dõi'}
+              ? `${t('positionModal.addTitle')} (${initialData.ticker})`
+              : t('positionModal.addTitle')}
         </span>
       }
       open={visible}
       onCancel={onCancel}
       onOk={() => form.submit()}
       confirmLoading={loading}
-      okText={isEdit ? 'Lưu thay đổi' : 'Thêm vào danh mục'}
-      cancelText="Hủy"
+      okText={isEdit ? t('positionModal.submitEdit') : t('positionModal.submitAdd')}
+      cancelText={t('common.cancel')}
       width={600}
     >
       <Form
@@ -132,14 +134,14 @@ export const PositionModal: React.FC<PositionModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Form.Item
             name="ticker"
-            label={<span className="font-medium">Mã Cổ phiếu (HOSE / HNX / UPCoM)</span>}
+            label={<span className="font-medium">{t('positionModal.tickerLabel')}</span>}
             rules={[
-              { required: true, message: 'Vui lòng nhập mã cổ phiếu' },
-              { min: 3, max: 10, message: 'Mã từ 3 đến 10 ký tự' },
+              { required: true, message: t('positionModal.tickerRequired') },
+              { min: 3, max: 10, message: t('positionModal.tickerLength') },
             ]}
           >
             <Input
-              placeholder="VD: FPT, HPG, SSI, TAL, VCI..."
+              placeholder={t('positionModal.tickerPlaceholder')}
               disabled={isEdit}
               className="uppercase font-bold mono-font"
               onChange={(e) => {
@@ -150,12 +152,13 @@ export const PositionModal: React.FC<PositionModalProps> = ({
 
           <Form.Item
             name="quantity"
-            label={<span className="font-medium">Số lượng CP</span>}
-            rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
+            label={<span className="font-medium">{t('positionModal.quantityLabel')}</span>}
+            rules={[{ required: true, message: t('positionModal.quantityRequired') }]}
           >
             <InputNumber
               min={0}
               step={1}
+              placeholder={t('positionModal.quantityPlaceholder')}
               className="w-full mono-font"
               formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             />
@@ -165,12 +168,13 @@ export const PositionModal: React.FC<PositionModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Form.Item
             name="buy_price"
-            label={<span className="font-medium">Giá vốn mua (x1,000 VND)</span>}
-            rules={[{ required: true, message: 'Vui lòng nhập giá mua' }]}
+            label={<span className="font-medium">{t('positionModal.buyPriceLabel')}</span>}
+            rules={[{ required: true, message: t('positionModal.buyPriceRequired') }]}
           >
             <InputNumber
               min={0.1}
               step={0.1}
+              placeholder={t('positionModal.buyPricePlaceholder')}
               className="w-full mono-font"
               onChange={(val) => setBuyPrice(Number(val) || 0)}
             />
@@ -178,10 +182,10 @@ export const PositionModal: React.FC<PositionModalProps> = ({
 
           <Form.Item
             name="company_name"
-            label={<span className="font-medium">Tên Doanh nghiệp (Tự động)</span>}
+            label={<span className="font-medium">{t('positionModal.companyNameLabel')}</span>}
           >
             <Input
-              placeholder="Để trống để hệ thống tự lấy từ sàn"
+              placeholder={t('positionModal.companyNamePlaceholder')}
               className="text-xs"
             />
           </Form.Item>
@@ -192,10 +196,10 @@ export const PositionModal: React.FC<PositionModalProps> = ({
           <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
             <div className="flex items-center gap-2 font-semibold">
               <Target className="w-4 h-4" />
-              <span>Ngưỡng Chốt lời (Take Profit): +{tpPct}%</span>
+              <span>{t('positionModal.tpLabel')}: +{tpPct}%</span>
             </div>
             <div className="text-xs font-bold mono-font bg-white dark:bg-slate-900 px-2.5 py-1 rounded-md border border-emerald-300 dark:border-emerald-700">
-              Mục tiêu: {targetTpPrice.toFixed(2)} (k VND)
+              {t('positionModal.tpPriceEst')}: {targetTpPrice.toFixed(2)} (k VND)
             </div>
           </div>
           <Form.Item name="tp_pct" noStyle>
@@ -217,10 +221,10 @@ export const PositionModal: React.FC<PositionModalProps> = ({
           <div className="flex items-center justify-between text-rose-800 dark:text-rose-300">
             <div className="flex items-center gap-2 font-semibold">
               <ShieldAlert className="w-4 h-4" />
-              <span>Ngưỡng Cắt lỗ (Stop Loss): -{slPct}%</span>
+              <span>{t('positionModal.slLabel')}: -{slPct}%</span>
             </div>
             <div className="text-xs font-bold mono-font bg-white dark:bg-slate-900 px-2.5 py-1 rounded-md border border-rose-300 dark:border-rose-700">
-              Phòng hộ: {targetSlPrice.toFixed(2)} (k VND)
+              {t('positionModal.slPriceEst')}: {targetSlPrice.toFixed(2)} (k VND)
             </div>
           </div>
           <Form.Item name="sl_pct" noStyle>
@@ -244,8 +248,8 @@ export const PositionModal: React.FC<PositionModalProps> = ({
         >
           <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <div>
-              <div className="font-semibold text-xs text-slate-800 dark:text-white">Kích hoạt theo dõi & cảnh báo</div>
-              <div className="text-[11px] text-slate-500">Tự động quét giá và gửi Telegram khi chạm ngưỡng</div>
+              <div className="font-semibold text-xs text-slate-800 dark:text-white">{t('positionModal.enableMonitoring')}</div>
+              <div className="text-[11px] text-slate-500">{t('positionModal.enableMonitoringDesc')}</div>
             </div>
             <Switch />
           </div>
