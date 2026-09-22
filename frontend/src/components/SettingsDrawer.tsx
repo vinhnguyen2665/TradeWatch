@@ -57,7 +57,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const [settingsData, setSettingsData] = useState<SystemSettings | null>(null);
 
   // Active Tab state
-  const [activeTab, setActiveTab] = useState<'ai' | 'system' | 'telegram'>('ai');
+  const [activeTab, setActiveTab] = useState<'system' | 'ai' | 'telegram'>('system');
 
   // User AI Settings state
   const [userAIConfig, setUserAIConfig] = useState<UserAIConfig | null>(null);
