@@ -55,6 +55,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const isAdmin = user?.role === 'admin';
 
   const [form] = Form.useForm();
+  const adminChatIdWatch = Form.useWatch('telegram_chat_id', form);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [testingTelegram, setTestingTelegram] = useState<boolean>(false);
@@ -618,39 +619,115 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 layout="vertical"
                 className="space-y-4 pt-1"
               >
+                {/* Bot Info & Direct Link Banner */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 text-white shadow-md border border-emerald-500/30 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                      <Send className="w-5 h-5 text-emerald-300" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-emerald-200 font-medium">Bot Cảnh Báo TradeWatch Hệ Thống:</div>
+                      <div className="text-sm font-bold font-mono text-white flex items-center gap-1.5">
+                        @trade_zero9vn_bot
+                      </div>
+                    </div>
+                  </div>
+                  <a
+                    href="https://t.me/trade_zero9vn_bot"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow transition-colors shrink-0"
+                  >
+                    Mở Bot & Bấm Start <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                {/* 1. Bot Token Configuration */}
                 <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
-                      <Send className="w-4 h-4" /> Cấu hình Telegram Bot Hệ Thống
+                      <Key className="w-4 h-4" /> 1. Telegram Bot Token (Hệ Thống)
                     </div>
-                    {settingsData?.telegram_bot_token_set && (
-                      <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                        TOKEN ĐÃ CẤU HÌNH
-                      </span>
+                    {settingsData?.telegram_bot_token_set ? (
+                      <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> TOKEN ĐÃ CẤU HÌNH
+                      </Tag>
+                    ) : (
+                      <Tag color="warning" className="text-[10px] font-bold m-0">
+                        CHƯA CÓ TOKEN
+                      </Tag>
                     )}
                   </div>
 
                   <Form.Item
                     name="telegram_bot_token"
-                    label={<span className="text-xs font-medium">Telegram Bot Token (Hệ Thống)</span>}
+                    label={<span className="text-xs font-medium">Telegram Bot Token</span>}
                     help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Lấy từ @BotFather trên Telegram (VD: 123456789:ABCdef...). Để trống nếu không muốn đổi.</span>}
                   >
                     <Input.Password
-                      placeholder="Nhập Bot Token mới..."
+                      placeholder="Nhập Bot Token mới nếu muốn cập nhật..."
                     />
                   </Form.Item>
+                </Card>
+
+                {/* 2. System Chat ID / Group ID Configuration */}
+                <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
+                      <Send className="w-4 h-4" /> 2. Telegram Chat ID / Group ID Hệ Thống
+                    </div>
+                    {(adminChatIdWatch || form.getFieldValue('telegram_chat_id')) ? (
+                      <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> ĐÃ GÁN ID: {adminChatIdWatch || form.getFieldValue('telegram_chat_id')}
+                      </Tag>
+                    ) : (
+                      <Tag color="warning" className="text-[10px] font-bold m-0">
+                        CHƯA GÁN CHAT ID
+                      </Tag>
+                    )}
+                  </div>
 
                   <Form.Item
                     name="telegram_chat_id"
-                    label={<span className="text-xs font-medium">Telegram Chat ID / Group ID Hệ Thống</span>}
+                    label={<span className="text-xs font-medium">Telegram Chat ID / Group ID:</span>}
                     rules={[{ required: false }]}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">ID quản trị viên nhận tin hoặc Group ID (VD: 987654321 hoặc -100123456789).</span>}
+                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Dãy số ID tài khoản cá nhân Quản Trị Viên hoặc Group ID (bắt đầu bằng -100...) để nhận thông báo.</span>}
                   >
                     <Input
-                      placeholder="VD: 123456789"
-                      className="mono-font"
+                      placeholder="Nhập ID cá nhân (VD: 123456789) hoặc Group ID (VD: -100123456789)"
+                      className="mono-font text-xs"
+                      allowClear
                     />
                   </Form.Item>
+
+                  {/* Step by step guide identical to user */}
+                  <div className="p-3.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-2.5 mt-2">
+                    <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                      <HelpCircle className="w-4 h-4" /> Hướng dẫn 3 bước để nhận tin nhắn từ @trade_zero9vn_bot:
+                    </div>
+                    <div className="space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
+                        <div>
+                          <b>Bắt buộc kích hoạt Bot:</b> Mở Telegram và bấm <b>Start</b> (<code className="font-mono text-emerald-600 dark:text-emerald-400">/start</code>) với bot <a href="https://t.me/trade_zero9vn_bot" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline font-mono inline-flex items-center gap-0.5">@trade_zero9vn_bot <ExternalLink className="w-3 h-3 inline" /></a> (hoặc thêm bot vào Group và cấp quyền Admin).
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
+                        <div>
+                          <b>Lấy Chat ID / Group ID:</b> Chat với bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@userinfobot</a> hoặc <a href="https://t.me/RawDataBot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@RawDataBot</a> &rarr; Bấm <b>Start</b> (hoặc thêm bot vào group) để lấy dãy số <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-600 dark:text-blue-400">Id</code> (Cá nhân: <code className="font-mono">987654321</code>, Group: <code className="font-mono">-100123456789</code>).
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                        <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
+                        <div>
+                          <b>Lưu & Kiểm tra:</b> Dán ID vào ô bên trên, bấm <b>"Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot"</b> để xác nhận và bấm <b>"Lưu Cài Đặt"</b> ở góc trên.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <Button
                     type="dashed"
@@ -658,23 +735,35 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     icon={<MessageSquare className="w-4 h-4" />}
                     onClick={handleTestTelegram}
                     loading={testingTelegram}
-                    className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-medium"
+                    className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-semibold"
                   >
-                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm
+                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot
                   </Button>
                 </Card>
               </Form>
             ) : (
               <div className="space-y-4 pt-1">
-                {/* Information Callout */}
-                <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 text-xs text-emerald-900 dark:text-emerald-300">
-                  <div className="flex items-center gap-1.5 font-bold mb-1">
-                    <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    Nhận Cảnh Báo TP/SL Danh Mục Riêng Qua Telegram
+                {/* Bot Info & Direct Link Banner */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 text-white shadow-md border border-emerald-500/30 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                      <Send className="w-5 h-5 text-emerald-300" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-emerald-200 font-medium">Bot Cảnh Báo TradeWatch:</div>
+                      <div className="text-sm font-bold font-mono text-white flex items-center gap-1.5">
+                        @trade_zero9vn_bot
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
-                    Hệ thống sẽ tự động gửi tin nhắn thông báo riêng tới Telegram của bạn ngay khi bất kỳ cổ phiếu nào trong danh mục cá nhân chạm ngưỡng Chốt Lời (Take Profit) hoặc Cắt Lỗ (Stop Loss).
-                  </p>
+                  <a
+                    href="https://t.me/trade_zero9vn_bot"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow transition-colors shrink-0"
+                  >
+                    Mở Bot & Bấm Start <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
 
                 <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
@@ -710,15 +799,32 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   </div>
 
                   {/* Step by step guide */}
-                  <div className="p-3 bg-white dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700/60 text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5 mt-2">
-                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 text-xs">
-                      <HelpCircle className="w-3.5 h-3.5 text-blue-500" /> Cách lấy Telegram Chat ID trong 10 giây:
+                  <div className="p-3.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-2.5 mt-2">
+                    <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                      <HelpCircle className="w-4 h-4" /> Hướng dẫn 3 bước để nhận tin nhắn từ @trade_zero9vn_bot:
                     </div>
-                    <ol className="list-decimal list-inside space-y-1 pl-1 text-[11px] text-slate-500 dark:text-slate-400">
-                      <li>Mở Telegram và chat với bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@userinfobot</a> hoặc <a href="https://t.me/RawDataBot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@RawDataBot</a></li>
-                      <li>Bấm <b>Start</b> để nhận dãy số <code>Id</code> của bạn (VD: <code>987654321</code>).</li>
-                      <li>Dán dãy số ID đó vào ô trên và bấm <b>"Gửi Tin Nhắn Thử Nghiệm"</b> bên dưới để xác nhận.</li>
-                    </ol>
+                    <div className="space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
+                        <div>
+                          <b>Bắt buộc kích hoạt Bot:</b> Mở Telegram và bấm <b>Start</b> (<code className="font-mono text-emerald-600 dark:text-emerald-400">/start</code>) với bot <a href="https://t.me/trade_zero9vn_bot" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline font-mono inline-flex items-center gap-0.5">@trade_zero9vn_bot <ExternalLink className="w-3 h-3 inline" /></a> để cho phép bot gửi tin nhắn tới bạn.
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
+                        <div>
+                          <b>Lấy Chat ID cá nhân:</b> Chat với bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@userinfobot</a> hoặc <a href="https://t.me/RawDataBot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@RawDataBot</a> &rarr; Bấm <b>Start</b> để lấy dãy số <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-600 dark:text-blue-400">Id</code> của bạn (VD: <code className="font-mono">987654321</code>).
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+                        <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
+                        <div>
+                          <b>Lưu & Kiểm tra:</b> Dán ID vào ô bên trên, bấm <b>"Gửi Tin Nhắn Cảnh Báo Thử Nghiệm"</b> để xác nhận và bấm <b>"Lưu Cài Đặt"</b> ở góc trên.
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <Button
@@ -727,9 +833,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     icon={<MessageSquare className="w-4 h-4" />}
                     onClick={handleTestTelegram}
                     loading={testingTelegram}
-                    className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-medium"
+                    className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-semibold"
                   >
-                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm
+                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot
                   </Button>
                 </Card>
               </div>

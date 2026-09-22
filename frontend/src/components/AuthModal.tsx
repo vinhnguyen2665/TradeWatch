@@ -235,7 +235,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <Form.Item
                     name="telegram_chat_id"
                     label={<span className="text-xs font-medium">Telegram Chat ID (Tùy chọn)</span>}
-                    help={<span className="text-[10px] text-slate-500">Dùng để nhận cảnh báo TP/SL trực tiếp qua Telegram</span>}
+                    help={<span className="text-[10px] text-slate-500">Lấy ID từ @userinfobot và bấm Start với @trade_zero9vn_bot để nhận cảnh báo TP/SL</span>}
                   >
                     <Input
                       prefix={<Send className="w-4 h-4 text-slate-400 mr-1" />}
