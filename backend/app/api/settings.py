@@ -45,6 +45,7 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
     trade_hours_val = await _get_or_create_setting(db, "trade_hours_only", "true")
     token_val = await _get_or_create_setting(db, "telegram_bot_token", "")
     chat_id_val = await _get_or_create_setting(db, "telegram_chat_id", "")
+    gemini_key_val = await _get_or_create_setting(db, "GEMINI_API_KEY", "")
 
     return SystemSettingsOut(
         polling_interval_sec=int(interval_val) if interval_val.isdigit() else 30,
@@ -53,6 +54,7 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
         trade_hours_only=trade_hours_val.strip().lower() in ("true", "1", "yes"),
         telegram_bot_token_set=bool(token_val.strip()),
         telegram_chat_id=chat_id_val,
+        gemini_api_key_set=bool(gemini_key_val.strip()),
         scheduler_running=scheduler_service.is_running,
     )
 
@@ -123,6 +125,15 @@ async def update_settings(
             item.value = payload.telegram_chat_id.strip()
         else:
             db.add(SystemSetting(key="telegram_chat_id", value=payload.telegram_chat_id.strip()))
+
+    if payload.gemini_api_key is not None:
+        stmt = select(SystemSetting).where(SystemSetting.key == "GEMINI_API_KEY")
+        res = await db.execute(stmt)
+        item = res.scalars().first()
+        if item:
+            item.value = payload.gemini_api_key.strip()
+        else:
+            db.add(SystemSetting(key="GEMINI_API_KEY", value=payload.gemini_api_key.strip()))
 
     await db.commit()
 

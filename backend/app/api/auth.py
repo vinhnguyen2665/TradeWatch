@@ -3,13 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models import User
+from app.models import User, UserAISetting
 from app.schemas import (
     UserRegister,
     UserLogin,
     UserOut,
     TokenOut,
     UserProfileUpdate,
+    UserAIConfigUpdate,
+    UserAIConfigOut,
 )
 from app.auth import (
     hash_password,
@@ -105,3 +107,89 @@ async def update_profile(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+@router.get("/ai-config", response_model=UserAIConfigOut)
+async def get_user_ai_config(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy cấu hình AI Engine riêng biệt của người dùng hiện tại."""
+    stmt = select(UserAISetting).where(UserAISetting.user_id == current_user.id)
+    res = await db.execute(stmt)
+    setting = res.scalars().first()
+
+    if not setting:
+        return UserAIConfigOut()
+
+    return UserAIConfigOut(
+        ai_provider=setting.ai_provider or "gemini",
+        gemini_api_key_set=bool(setting.gemini_api_key and setting.gemini_api_key.strip()),
+        gemini_api_key_masked="****************" if (setting.gemini_api_key and setting.gemini_api_key.strip()) else None,
+        openai_api_key_set=bool(setting.openai_api_key and setting.openai_api_key.strip()),
+        openai_api_key_masked="****************" if (setting.openai_api_key and setting.openai_api_key.strip()) else None,
+        local_ai_base_url=setting.local_ai_base_url.strip() if (setting.local_ai_base_url and setting.local_ai_base_url.strip()) else None,
+        local_ai_api_key_set=bool(setting.local_ai_api_key and setting.local_ai_api_key.strip()),
+        local_ai_api_key_masked="****************" if (setting.local_ai_api_key and setting.local_ai_api_key.strip()) else None,
+        selected_model=setting.selected_model,
+    )
+
+
+@router.put("/ai-config", response_model=UserAIConfigOut)
+async def update_user_ai_config(
+    payload: UserAIConfigUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cập nhật cấu hình AI Engine riêng biệt cho người dùng hiện tại."""
+    stmt = select(UserAISetting).where(UserAISetting.user_id == current_user.id)
+    res = await db.execute(stmt)
+    setting = res.scalars().first()
+
+    if not setting:
+        setting = UserAISetting(user_id=current_user.id)
+        db.add(setting)
+
+    if payload.ai_provider:
+        setting.ai_provider = payload.ai_provider
+
+    # Chỉ cập nhật nếu user nhập key mới, nếu user gửi chuỗi '****************' thì giữ nguyên key cũ
+    if payload.gemini_api_key is not None:
+        if payload.gemini_api_key.strip() and not payload.gemini_api_key.strip().startswith("****"):
+            setting.gemini_api_key = payload.gemini_api_key.strip()
+        elif payload.gemini_api_key.strip() == "":
+            setting.gemini_api_key = None
+
+    if payload.openai_api_key is not None:
+        if payload.openai_api_key.strip() and not payload.openai_api_key.strip().startswith("****"):
+            setting.openai_api_key = payload.openai_api_key.strip()
+        elif payload.openai_api_key.strip() == "":
+            setting.openai_api_key = None
+
+    if payload.local_ai_base_url is not None:
+        setting.local_ai_base_url = payload.local_ai_base_url.strip() if payload.local_ai_base_url.strip() else None
+
+    if payload.local_ai_api_key is not None:
+        if payload.local_ai_api_key.strip() and not payload.local_ai_api_key.strip().startswith("****"):
+            setting.local_ai_api_key = payload.local_ai_api_key.strip()
+        elif payload.local_ai_api_key.strip() == "":
+            setting.local_ai_api_key = None
+
+    if payload.selected_model is not None:
+        setting.selected_model = payload.selected_model.strip()
+
+    await db.commit()
+    await db.refresh(setting)
+
+    return UserAIConfigOut(
+        ai_provider=setting.ai_provider,
+        gemini_api_key_set=bool(setting.gemini_api_key and setting.gemini_api_key.strip()),
+        gemini_api_key_masked="****************" if (setting.gemini_api_key and setting.gemini_api_key.strip()) else None,
+        openai_api_key_set=bool(setting.openai_api_key and setting.openai_api_key.strip()),
+        openai_api_key_masked="****************" if (setting.openai_api_key and setting.openai_api_key.strip()) else None,
+        local_ai_base_url=setting.local_ai_base_url.strip() if (setting.local_ai_base_url and setting.local_ai_base_url.strip()) else None,
+        local_ai_api_key_set=bool(setting.local_ai_api_key and setting.local_ai_api_key.strip()),
+        local_ai_api_key_masked="****************" if (setting.local_ai_api_key and setting.local_ai_api_key.strip()) else None,
+        selected_model=setting.selected_model,
+    )
+

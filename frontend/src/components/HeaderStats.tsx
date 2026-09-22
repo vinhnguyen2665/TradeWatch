@@ -29,6 +29,7 @@ interface HeaderStatsProps {
   onToggleBot: () => void;
   onOpenSettings: () => void;
   onOpenScreener: () => void;
+  onOpenAllocation: () => void;
   onOpenAddModal: () => void;
 }
 
@@ -41,6 +42,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
   onToggleBot,
   onOpenSettings,
   onOpenScreener,
+  onOpenAllocation,
   onOpenAddModal,
 }) => {
   const { user, logout } = useAuth();
@@ -76,7 +78,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
     {
       key: 'settings',
       icon: <SlidersHorizontal className="w-3.5 h-3.5" />,
-      label: 'Cài đặt Cảnh báo',
+      label: 'Cài đặt Hệ thống & AI Key',
       onClick: onOpenSettings,
     },
     {
@@ -146,85 +148,108 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Theme Mode Toggle Button */}
-          <Tooltip title={isDark ? 'Chuyển sang Giao diện Sáng (Light Mode)' : 'Chuyển sang Giao diện Tối (Dark Mode)'}>
-            <Button
-              type="default"
-              icon={isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-              onClick={onToggleTheme}
-              className="flex items-center gap-1.5 font-medium border-slate-200 dark:border-slate-700 hover:border-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-            >
-              {isDark ? 'Sáng' : 'Tối'}
-            </Button>
-          </Tooltip>
-
-          <Tooltip title={isRunning ? 'Tạm dừng giám sát' : 'Tiếp tục giám sát'}>
-            <Button
-              type={isRunning ? 'default' : 'primary'}
-              danger={isRunning}
-              icon={isRunning ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-              onClick={onToggleBot}
-              className="flex items-center gap-1.5 font-medium shadow-sm"
-            >
-              {isRunning ? 'Tạm dừng Bot' : 'Bật Bot'}
-            </Button>
-          </Tooltip>
-
-          <Button
-            type="default"
-            icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
-            onClick={onRefresh}
-            className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
-          >
-            Làm mới
-          </Button>
-
-          <Button
-            type="default"
-            icon={<Sparkles className="w-4 h-4 text-amber-500" />}
-            onClick={onOpenScreener}
-            className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/30 hover:border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-medium"
-          >
-            Gợi ý mã CP
-          </Button>
-
-          <Button
-            type="default"
-            icon={<SlidersHorizontal className="w-4 h-4 text-slate-700 dark:text-slate-300" />}
-            onClick={onOpenSettings}
-            className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
-          >
-            Cài đặt
-          </Button>
-
-          <Button
-            type="primary"
-            icon={<PlusCircle className="w-4 h-4" />}
-            onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 font-semibold"
-          >
-            Thêm Mã Mới
-          </Button>
-
-          {/* User Profile Dropdown */}
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-            <Button
-              type="default"
-              className="flex items-center gap-2 pl-2 pr-3 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-500 rounded-lg"
-            >
-              <Avatar
-                size="small"
-                className="bg-gradient-to-tr from-blue-600 to-emerald-500 font-bold uppercase text-[11px]"
+        {/* Action Buttons arranged in 2 organized rows */}
+        <div className="flex flex-col items-start sm:items-end gap-2.5 shrink-0">
+          {/* Row 1: System Controls, Bot Switch, Theme & Profile */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Theme Mode Toggle Button */}
+            <Tooltip title={isDark ? 'Chuyển sang Giao diện Sáng (Light Mode)' : 'Chuyển sang Giao diện Tối (Dark Mode)'}>
+              <Button
+                type="default"
+                size="middle"
+                icon={isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+                onClick={onToggleTheme}
+                className="flex items-center gap-1.5 font-medium border-slate-200 dark:border-slate-700 hover:border-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
               >
-                {user?.username?.charAt(0) || 'U'}
-              </Avatar>
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 max-w-[90px] truncate">
-                {user?.full_name || user?.username}
-              </span>
+                {isDark ? 'Sáng' : 'Tối'}
+              </Button>
+            </Tooltip>
+
+            <Tooltip title={isRunning ? 'Tạm dừng giám sát' : 'Tiếp tục giám sát'}>
+              <Button
+                type={isRunning ? 'default' : 'primary'}
+                danger={isRunning}
+                size="middle"
+                icon={isRunning ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                onClick={onToggleBot}
+                className="flex items-center gap-1.5 font-medium shadow-sm"
+              >
+                {isRunning ? 'Tạm dừng Bot' : 'Bật Bot'}
+              </Button>
+            </Tooltip>
+
+            <Button
+              type="default"
+              size="middle"
+              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+              onClick={onRefresh}
+              className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
+            >
+              Làm mới
             </Button>
-          </Dropdown>
+
+            {/* User Profile Dropdown */}
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+              <Button
+                type="default"
+                size="middle"
+                className="flex items-center gap-2 pl-2 pr-3 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-500 rounded-lg"
+              >
+                <Avatar
+                  size="small"
+                  className="bg-gradient-to-tr from-blue-600 to-emerald-500 font-bold uppercase text-[11px]"
+                >
+                  {user?.username?.charAt(0) || 'U'}
+                </Avatar>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 max-w-[100px] truncate">
+                  {user?.full_name || user?.username}
+                </span>
+              </Button>
+            </Dropdown>
+          </div>
+
+          {/* Row 2: Trading Tools, AI Robo-Advisor & Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="default"
+              size="middle"
+              icon={<PieChart className="w-4 h-4 text-indigo-500" />}
+              onClick={onOpenAllocation}
+              className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40 hover:border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 font-semibold shadow-sm"
+            >
+              AI Phân Bổ Vốn
+            </Button>
+
+            <Button
+              type="default"
+              size="middle"
+              icon={<Sparkles className="w-4 h-4 text-amber-500" />}
+              onClick={onOpenScreener}
+              className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/30 hover:border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-medium"
+            >
+              Gợi ý mã CP
+            </Button>
+
+            <Button
+              type="default"
+              size="middle"
+              icon={<SlidersHorizontal className="w-4 h-4 text-slate-700 dark:text-slate-300" />}
+              onClick={onOpenSettings}
+              className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
+            >
+              Cài đặt
+            </Button>
+
+            <Button
+              type="primary"
+              size="middle"
+              icon={<PlusCircle className="w-4 h-4" />}
+              onClick={onOpenAddModal}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 font-semibold"
+            >
+              Thêm Mã Mới
+            </Button>
+          </div>
         </div>
       </div>
 

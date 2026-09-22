@@ -87,3 +87,24 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+async def get_optional_current_user(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    """Dependency trích xuất user nếu có JWT token, trả về None nếu chưa đăng nhập."""
+    if not auth or not auth.credentials:
+        return None
+    try:
+        payload = jwt.decode(auth.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = int(user_id_str)
+        stmt = select(User).where(User.id == user_id)
+        res = await db.execute(stmt)
+        return res.scalars().first()
+    except Exception:
+        return None
+

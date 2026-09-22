@@ -6,6 +6,7 @@ import { PositionModal } from './components/PositionModal';
 import { HistoryChartModal } from './components/HistoryChartModal';
 import { SettingsDrawer } from './components/SettingsDrawer';
 import { ScreenerModal } from './components/ScreenerModal';
+import { PortfolioAllocationModal } from './components/PortfolioAllocationModal';
 import { LandingPage } from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import {
@@ -40,8 +41,16 @@ const DashboardView: React.FC<{
   const [historyTicker, setHistoryTicker] = useState<string | null>(null);
   const [historyPosition, setHistoryPosition] = useState<PortfolioPosition | null>(null);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+  const [settingsFocusField, setSettingsFocusField] = useState<string | null>(null);
   const [screenerVisible, setScreenerVisible] = useState<boolean>(false);
+  const [allocationVisible, setAllocationVisible] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const handleOpenSettings = (focusField?: string) => {
+    setSettingsFocusField(focusField || null);
+    setSettingsVisible(true);
+  };
+
 
   // Load Data
   const loadData = useCallback(async (silent: boolean = false) => {
@@ -170,6 +179,7 @@ const DashboardView: React.FC<{
           onToggleBot={handleToggleBot}
           onOpenSettings={() => setSettingsVisible(true)}
           onOpenScreener={() => setScreenerVisible(true)}
+          onOpenAllocation={() => setAllocationVisible(true)}
           onOpenAddModal={() => {
             setEditingPosition(null);
             setInitialFormData(null);
@@ -224,11 +234,24 @@ const DashboardView: React.FC<{
         onQuickAdd={handleQuickAdd}
       />
 
+      {/* AI Portfolio Allocation & Capital Strategy Modal */}
+      <PortfolioAllocationModal
+        visible={allocationVisible}
+        onClose={() => setAllocationVisible(false)}
+        onPositionsImported={() => loadData(true)}
+        existingPositions={positions}
+        onOpenSettings={handleOpenSettings}
+      />
+
       {/* Settings Drawer */}
       <SettingsDrawer
         visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
+        onClose={() => {
+          setSettingsVisible(false);
+          setSettingsFocusField(null);
+        }}
         onSettingsUpdated={() => loadData(true)}
+        focusField={settingsFocusField}
       />
     </Layout>
   );

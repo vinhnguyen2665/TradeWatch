@@ -29,6 +29,28 @@ class UserProfileUpdate(BaseModel):
     new_password: Optional[str] = Field(None, min_length=6, max_length=100)
 
 
+class UserAIConfigUpdate(BaseModel):
+    ai_provider: str = Field(default="gemini", description="'gemini' | 'openai' | 'local'")
+    gemini_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    local_ai_base_url: Optional[str] = None
+    local_ai_api_key: Optional[str] = None
+    selected_model: Optional[str] = None
+
+
+class UserAIConfigOut(BaseModel):
+    ai_provider: str = "gemini"
+    gemini_api_key_set: bool = False
+    gemini_api_key_masked: Optional[str] = None
+    openai_api_key_set: bool = False
+    openai_api_key_masked: Optional[str] = None
+    local_ai_base_url: Optional[str] = None
+    local_ai_api_key_set: bool = False
+    local_ai_api_key_masked: Optional[str] = None
+    selected_model: Optional[str] = None
+
+
+
 class UserOut(BaseModel):
     id: int
     username: str
@@ -125,6 +147,7 @@ class SystemSettingsUpdate(BaseModel):
     trade_hours_only: Optional[bool] = None
     telegram_bot_token: Optional[str] = None
     telegram_chat_id: Optional[str] = None
+    gemini_api_key: Optional[str] = None
 
 
 class SystemSettingsOut(BaseModel):
@@ -134,6 +157,7 @@ class SystemSettingsOut(BaseModel):
     trade_hours_only: bool
     telegram_bot_token_set: bool
     telegram_chat_id: Optional[str] = None
+    gemini_api_key_set: bool = False
     scheduler_running: bool
 
 
@@ -141,6 +165,114 @@ class TelegramTestRequest(BaseModel):
     bot_token: Optional[str] = None
     chat_id: Optional[str] = None
     custom_message: Optional[str] = None
+
+
+# --- AI Portfolio Allocation & Capital Strategy Schemas ---
+class GeminiModelInfo(BaseModel):
+    id: str
+    name: str
+    display_name: str
+    description: Optional[str] = None
+    input_token_limit: Optional[int] = None
+    output_token_limit: Optional[int] = None
+    is_recommended: bool = False
+
+
+class AssetAllocationItem(BaseModel):
+    asset_class: str = Field(..., description="Nhóm tài sản: VN30 / Bluechip, Midcap / HNX30, Penny / Smallcap")
+    ticker: str = Field(..., description="Mã cổ phiếu")
+    company_name: Optional[str] = Field(None, description="Tên công ty niêm yết")
+    capital_percentage: float = Field(..., description="Tỷ lệ phân bổ vốn % (VD: 60, 30, 10)")
+    allocated_amount: float = Field(..., description="Số tiền phân bổ (VND)")
+    current_price: float = Field(..., description="Giá thị trường hiện tại (VND)")
+    estimated_shares: int = Field(..., description="Số lượng cổ phiếu ước tính mua được (làm tròn lô 100)")
+    strategic_position: str = Field(..., description="Vị thế chiến lược: Tích sản / Đón sóng / Lướt sóng T+")
+    profit_target: str = Field(..., description="Mục tiêu chốt lời kỳ vọng (% và vùng giá)")
+    stop_loss: Optional[str] = Field(None, description="Ngưỡng cắt lỗ an toàn")
+
+
+class DetailedPositionStrategy(BaseModel):
+    ticker: str = Field(..., description="Mã cổ phiếu")
+    asset_class: str = Field(..., description="Nhóm tài sản")
+    percentage: float = Field(..., description="Tỷ trọng vốn %")
+    title: str = Field(..., description="Tiêu đề chiến lược vị thế")
+    badge_type: str = Field("SAFE", description="'SAFE', 'MEDIUM', 'HIGH_RISK'")
+    position_analysis: str = Field(..., description="Phân tích chi tiết vị thế kỹ thuật & cơ bản")
+    execution_strategy: str = Field(..., description="Chiến lược giải ngân chi tiết (DCA, gom hàng, chia vốn)")
+    buy_zone: str = Field(..., description="Vùng giá mua gom tối ưu")
+    profit_target_zone: str = Field(..., description="Vùng giá chốt lời kỳ vọng")
+    stop_loss_zone: str = Field(..., description="Vùng giá cắt lỗ vi phạm")
+    risk_notes: str = Field(..., description="Lưu ý quản trị rủi ro & thanh khoản")
+
+
+class PortfolioAllocationResult(BaseModel):
+    total_capital: float = Field(..., description="Tổng vốn đầu tư (VND)")
+    risk_profile: str = Field(..., description="Khẩu vị rủi ro: CONSERVATIVE, BALANCED, AGGRESSIVE")
+    summary_table: List[AssetAllocationItem] = Field(..., description="Bảng tổng quan phân bổ vốn")
+    detailed_strategies: List[DetailedPositionStrategy] = Field(..., description="Chi tiết chiến lược từng vị thế")
+    executive_summary: str = Field(..., description="Tổng quan chiến lược danh mục & tỷ lệ phân bổ")
+    market_cycle_assessment: str = Field(..., description="Đánh giá bối cảnh thị trường & xu hướng dòng tiền")
+    risk_management_rules: List[str] = Field(default=[], description="Quy tắc quản trị vốn & kỷ luật giao dịch")
+    estimated_portfolio_yield: Optional[str] = Field(None, description="Kỳ vọng lợi nhuận danh mục trung hạn")
+
+
+class PortfolioAllocationRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
+    total_capital: float = Field(..., gt=0, description="Tổng số vốn đầu tư dự kiến (VND)")
+    vn30_tickers: Optional[List[str]] = Field(default=[], description="Danh sách các mã Bluechip / VN30")
+    midcap_tickers: Optional[List[str]] = Field(default=[], description="Danh sách các mã Midcap / HNX30")
+    penny_tickers: Optional[List[str]] = Field(default=[], description="Danh sách các mã Penny / Smallcap")
+    # Fallback cho single string nếu client gửi phiên bản cũ
+    vn30_ticker: Optional[str] = None
+    midcap_ticker: Optional[str] = None
+    penny_ticker: Optional[str] = None
+    ai_provider: Optional[str] = Field("gemini", description="Nhà cung cấp: gemini | openai | local")
+    custom_api_key: Optional[str] = Field(None, description="API Key tùy chọn")
+    custom_base_url: Optional[str] = Field(None, description="Base URL cho Local AI (mặc định http://localhost:11434/v1)")
+    model_name: Optional[str] = Field(None, description="Tên model AI lựa chọn")
+    risk_profile: Optional[str] = Field("BALANCED", description="Khẩu vị rủi ro: CONSERVATIVE, BALANCED, AGGRESSIVE")
+    custom_weights: Optional[dict] = Field(None, description="Tùy chỉnh tỷ lệ: {'vn30': 60, 'midcap': 30, 'penny': 10}")
+
+    def get_vn30_list(self) -> List[str]:
+        res = [t.strip().upper() for t in self.vn30_tickers if t and t.strip()]
+        if not res and self.vn30_ticker:
+            res = [self.vn30_ticker.strip().upper()]
+        return res
+
+    def get_midcap_list(self) -> List[str]:
+        res = [t.strip().upper() for t in self.midcap_tickers if t and t.strip()]
+        if not res and self.midcap_ticker:
+            res = [self.midcap_ticker.strip().upper()]
+        return res
+
+    def get_penny_list(self) -> List[str]:
+        res = [t.strip().upper() for t in self.penny_tickers if t and t.strip()]
+        if not res and self.penny_ticker:
+            res = [self.penny_ticker.strip().upper()]
+        return res
+
+
+class PortfolioAllocationOut(BaseModel):
+    id: Optional[int] = None
+    user_id: Optional[int] = None
+    total_capital: float
+    data: PortfolioAllocationResult
+    created_at: datetime
+
+
+class ApplyAllocationPositionItem(BaseModel):
+    ticker: str
+    company_name: Optional[str] = None
+    buy_price: float = Field(..., description="Giá mua (x1,000 VND)")
+    quantity: int = Field(..., description="Số lượng cổ phiếu")
+    tp_pct: float = Field(default=7.0, ge=0.0)
+    sl_pct: float = Field(default=5.0, ge=0.0)
+
+
+class ApplyAllocationRequest(BaseModel):
+    positions: List[ApplyAllocationPositionItem] = Field(..., min_length=1)
+
 
 
 # --- Alert Log Schemas ---

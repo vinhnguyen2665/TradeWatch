@@ -11,6 +11,10 @@ import {
   LoginData,
   RegisterData,
   UserProfileUpdateData,
+  PortfolioAllocationRequest,
+  PortfolioAllocationRecord,
+  GeminiModelInfo,
+  UserAIConfig,
 } from '../types';
 
 const api = axios.create({
@@ -111,7 +115,7 @@ export const getSettings = async (): Promise<SystemSettings> => {
   return res.data;
 };
 
-export const updateSettings = async (settings: Partial<SystemSettings> & { telegram_bot_token?: string; telegram_chat_id?: string }): Promise<SystemSettings> => {
+export const updateSettings = async (settings: Partial<SystemSettings> & { telegram_bot_token?: string; telegram_chat_id?: string; gemini_api_key?: string }): Promise<SystemSettings> => {
   const res = await api.post<SystemSettings>('/settings', settings);
   return res.data;
 };
@@ -126,4 +130,65 @@ export const getScreenerSuggestions = async (): Promise<ScreenerSignal[]> => {
   return res.data;
 };
 
+// --- AI Portfolio Allocation APIs ---
+export const generateAllocation = async (data: PortfolioAllocationRequest): Promise<PortfolioAllocationRecord> => {
+  const res = await api.post<PortfolioAllocationRecord>('/allocation/generate', data, {
+    timeout: 180000, // 180 giây cho các mô hình AI phân tích sâu
+  });
+  return res.data;
+};
+
+export const getLatestAllocation = async (): Promise<PortfolioAllocationRecord | null> => {
+  const res = await api.get<PortfolioAllocationRecord | null>('/allocation/latest');
+  return res.data;
+};
+
+export const getAllocationHistory = async (limit: number = 20): Promise<PortfolioAllocationRecord[]> => {
+  const res = await api.get<PortfolioAllocationRecord[]>('/allocation/history', {
+    params: { limit },
+  });
+  return res.data;
+};
+
+export const deleteAllocation = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const res = await api.delete(`/allocation/${id}`);
+  return res.data;
+};
+
+export const getUserAIConfig = async (): Promise<UserAIConfig> => {
+  const res = await api.get<UserAIConfig>('/auth/ai-config');
+  return res.data;
+};
+
+export const updateUserAIConfig = async (data: Partial<UserAIConfig> & {
+  gemini_api_key?: string;
+  openai_api_key?: string;
+  local_ai_api_key?: string;
+}): Promise<UserAIConfig> => {
+  const res = await api.put<UserAIConfig>('/auth/ai-config', data);
+  return res.data;
+};
+
+export const getGeminiModels = async (provider: string = 'gemini', baseUrl?: string): Promise<GeminiModelInfo[]> => {
+  const res = await api.get<GeminiModelInfo[]>('/allocation/models', {
+    params: { provider, base_url: baseUrl },
+  });
+  return res.data;
+};
+
+export const applyAllocationToPortfolio = async (positions: Array<{
+  ticker: string;
+  company_name?: string;
+  buy_price: number;
+  quantity: number;
+  tp_pct?: number;
+  sl_pct?: number;
+}>): Promise<PortfolioPosition[]> => {
+  const res = await api.post<PortfolioPosition[]>('/allocation/apply-to-portfolio', {
+    positions,
+  });
+  return res.data;
+};
+
 export default api;
+

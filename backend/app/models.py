@@ -11,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
     desc,
+    JSON,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -37,6 +38,8 @@ class User(Base):
 
     positions = relationship("PortfolioPosition", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("AlertLog", back_populates="user", cascade="all, delete-orphan")
+    allocations = relationship("PortfolioAllocation", back_populates="user", cascade="all, delete-orphan")
+    ai_setting = relationship("UserAISetting", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username} email={self.email}>"
@@ -135,3 +138,58 @@ class AlertLog(Base):
 
     def __repr__(self):
         return f"<AlertLog user={self.user_id} {self.ticker} [{self.alert_type}] Price={self.triggered_price} PnL={self.pnl_pct}% Time={self.sent_at}>"
+
+
+class PortfolioAllocation(Base):
+    """Bảng lưu trữ lịch sử các kế hoạch phân bổ vốn và chiến lược danh mục AI (Gemini Robo-Advisor)."""
+    __tablename__ = "portfolio_allocations"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    total_capital = Column(Numeric(15, 2), nullable=False, comment="Tổng số vốn đầu tư dự kiến (VND)")
+    allocation_json = Column(JSON, nullable=False, comment="Dữ liệu phân bổ & chiến lược chi tiết định dạng JSON từ Gemini")
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True,
+    )
+
+    user = relationship("User", back_populates="allocations")
+
+    def __repr__(self):
+        return f"<PortfolioAllocation id={self.id} user={self.user_id} capital={self.total_capital} time={self.created_at}>"
+
+
+class UserAISetting(Base):
+    """Bảng lưu trữ cấu hình AI riêng biệt của từng người dùng (Gemini, OpenAI, Local AI)."""
+    __tablename__ = "user_ai_settings"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    ai_provider = Column(String(50), nullable=False, default="gemini", comment="'gemini' | 'openai' | 'local'")
+    gemini_api_key = Column(String(255), nullable=True)
+    openai_api_key = Column(String(255), nullable=True)
+    local_ai_base_url = Column(String(255), nullable=True, default=None)
+    local_ai_api_key = Column(String(255), nullable=True)
+    selected_model = Column(String(100), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    user = relationship("User", back_populates="ai_setting")
+
+    def __repr__(self):
+        return f"<UserAISetting user_id={self.user_id} provider={self.ai_provider} model={self.selected_model}>"
+
+

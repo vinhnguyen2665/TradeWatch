@@ -49,7 +49,15 @@ async def get_db():
 async def init_db():
     """Create all database tables if they do not exist, and safely alter columns if needed."""
     # Import all models to ensure metadata is populated
-    from app.models import User, PortfolioPosition, PriceHistory, SystemSetting, AlertLog
+    from app.models import (
+        User,
+        PortfolioPosition,
+        PriceHistory,
+        SystemSetting,
+        AlertLog,
+        PortfolioAllocation,
+        UserAISetting,
+    )
     from app.auth import hash_password
 
     async with engine.begin() as conn:

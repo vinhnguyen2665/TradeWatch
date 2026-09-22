@@ -73,6 +73,7 @@ export interface SystemSettings {
   trade_hours_only: boolean;
   telegram_bot_token_set: boolean;
   telegram_chat_id?: string;
+  gemini_api_key_set?: boolean;
   scheduler_running: boolean;
 }
 
@@ -137,3 +138,95 @@ export interface PositionFormData {
   sl_pct: number;
   is_active: boolean;
 }
+
+// --- AI Portfolio Allocation Interfaces ---
+export type AIProviderType = 'gemini' | 'openai' | 'local';
+
+export interface UserAIConfig {
+  ai_provider: AIProviderType;
+  gemini_api_key_set: boolean;
+  gemini_api_key_masked?: string;
+  openai_api_key_set: boolean;
+  openai_api_key_masked?: string;
+  local_ai_base_url?: string | null;
+  local_ai_api_key_set: boolean;
+  local_ai_api_key_masked?: string;
+  selected_model?: string;
+}
+
+export interface GeminiModelInfo {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  input_token_limit?: number;
+  output_token_limit?: number;
+  is_recommended: boolean;
+}
+
+export interface AssetAllocationItem {
+  asset_class: string;
+  ticker: string;
+  company_name?: string;
+  capital_percentage: number;
+  allocated_amount: number;
+  current_price: number;
+  estimated_shares: number;
+  strategic_position: string;
+  profit_target: string;
+  stop_loss?: string;
+}
+
+export interface DetailedPositionStrategy {
+  ticker: string;
+  asset_class: string;
+  percentage: number;
+  title: string;
+  badge_type: 'SAFE' | 'MEDIUM' | 'HIGH_RISK';
+  position_analysis: string;
+  execution_strategy: string;
+  buy_zone: string;
+  profit_target_zone: string;
+  stop_loss_zone: string;
+  risk_notes: string;
+}
+
+export interface PortfolioAllocationResult {
+  total_capital: number;
+  risk_profile: 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE' | string;
+  summary_table: AssetAllocationItem[];
+  detailed_strategies: DetailedPositionStrategy[];
+  executive_summary: string;
+  market_cycle_assessment: string;
+  risk_management_rules: string[];
+  estimated_portfolio_yield?: string;
+}
+
+export interface PortfolioAllocationRequest {
+  total_capital: number;
+  vn30_tickers?: string[];
+  midcap_tickers?: string[];
+  penny_tickers?: string[];
+  vn30_ticker?: string;
+  midcap_ticker?: string;
+  penny_ticker?: string;
+  ai_provider?: AIProviderType;
+  custom_api_key?: string;
+  custom_base_url?: string;
+  model_name?: string;
+  risk_profile?: string;
+  custom_weights?: {
+    vn30: number;
+    midcap: number;
+    penny: number;
+  };
+}
+
+export interface PortfolioAllocationRecord {
+  id?: number;
+  user_id?: number;
+  total_capital: number;
+  data: PortfolioAllocationResult;
+  created_at: string;
+}
+
