@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge, Tag, Tooltip } from 'antd';
+import { Card, Button, Badge, Tag, Tooltip, Dropdown, Avatar } from 'antd';
 import {
   PlayCircle,
   PauseCircle,
@@ -13,8 +13,12 @@ import {
   PlusCircle,
   Sun,
   Moon,
+  User as UserIcon,
+  LogOut,
+  Send,
 } from 'lucide-react';
 import { DashboardSummary } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderStatsProps {
   summary: DashboardSummary | null;
@@ -39,11 +43,49 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
   onOpenScreener,
   onOpenAddModal,
 }) => {
+  const { user, logout } = useAuth();
   const isRunning = summary?.bot_status === 'RUNNING';
   const isDark = themeMode === 'dark';
   const totalPnl = summary?.total_pnl_value ?? 0;
   const totalPnlPct = summary?.total_pnl_pct ?? 0;
   const isProfit = totalPnl >= 0;
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: (
+        <div className="px-1 py-1">
+          <div className="font-bold text-slate-800 dark:text-slate-100">{user?.full_name || user?.username}</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400">{user?.email}</div>
+          {user?.telegram_chat_id ? (
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+              <Send className="w-3 h-3" /> TG: {user.telegram_chat_id}
+            </div>
+          ) : (
+            <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+              Chưa gán Telegram Chat ID
+            </div>
+          )}
+        </div>
+      ),
+      disabled: true,
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: 'settings',
+      icon: <SlidersHorizontal className="w-3.5 h-3.5" />,
+      label: 'Cài đặt Cảnh báo',
+      onClick: onOpenSettings,
+    },
+    {
+      key: 'logout',
+      icon: <LogOut className="w-3.5 h-3.5 text-rose-500" />,
+      label: <span className="text-rose-600 dark:text-rose-400 font-medium">Đăng xuất</span>,
+      onClick: logout,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -166,8 +208,27 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
           >
             Thêm Mã Mới
           </Button>
+
+          {/* User Profile Dropdown */}
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+            <Button
+              type="default"
+              className="flex items-center gap-2 pl-2 pr-3 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-blue-500 rounded-lg"
+            >
+              <Avatar
+                size="small"
+                className="bg-gradient-to-tr from-blue-600 to-emerald-500 font-bold uppercase text-[11px]"
+              >
+                {user?.username?.charAt(0) || 'U'}
+              </Avatar>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 max-w-[90px] truncate">
+                {user?.full_name || user?.username}
+              </span>
+            </Button>
+          </Dropdown>
         </div>
       </div>
+
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,4 +1,41 @@
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string;
+  telegram_chat_id?: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
+export interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  full_name?: string;
+  telegram_chat_id?: string;
+}
+
+export interface LoginData {
+  username_or_email: string;
+  password: string;
+}
+
+export interface UserProfileUpdateData {
+  full_name?: string;
+  telegram_chat_id?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
 export interface PortfolioPosition {
+  id?: number;
+  user_id?: number;
   ticker: string;
   company_name?: string;
   buy_price: number;
@@ -49,6 +86,7 @@ export interface MarketStatus {
 
 export interface AlertLog {
   id: number;
+  user_id?: number;
   ticker: string;
   alert_type: 'TAKE_PROFIT' | 'STOP_LOSS' | 'PRICE_SPIKE' | 'BUY_SIGNAL';
   triggered_price: number;
@@ -99,4 +137,3 @@ export interface PositionFormData {
   sl_pct: number;
   is_active: boolean;
 }
-

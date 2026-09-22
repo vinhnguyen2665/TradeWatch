@@ -12,6 +12,7 @@ from app.scheduler import scheduler_service
 from app.crawler import stock_crawler
 
 # Routers
+from app.api.auth import router as auth_router
 from app.api.positions import router as positions_router
 from app.api.history import router as history_router
 from app.api.settings import router as settings_router
@@ -102,6 +103,7 @@ app.add_middleware(
 )
 
 # Mount các Router
+app.include_router(auth_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(positions_router, prefix="/api")
 app.include_router(history_router, prefix="/api")

@@ -1,22 +1,69 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator
+
+
+# --- User & Auth Schemas ---
+class UserRegister(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="Tên đăng nhập")
+    email: EmailStr = Field(..., description="Email người dùng")
+    password: str = Field(..., min_length=6, max_length=100, description="Mật khẩu")
+    full_name: Optional[str] = Field(None, max_length=255, description="Họ và tên")
+    telegram_chat_id: Optional[str] = Field(None, max_length=100, description="Telegram Chat ID")
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class UserLogin(BaseModel):
+    username_or_email: str = Field(..., description="Tên đăng nhập hoặc email")
+    password: str = Field(..., description="Mật khẩu")
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, max_length=255)
+    telegram_chat_id: Optional[str] = Field(None, max_length=100)
+    current_password: Optional[str] = None
+    new_password: Optional[str] = Field(None, min_length=6, max_length=100)
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
 
 
 # --- Portfolio Position Schemas ---
 class PortfolioPositionBase(BaseModel):
-    ticker: str = Field(..., max_length=10, description="Mã chứng khoán (HOSE/HNX)")
+    ticker: str = Field(..., min_length=2, max_length=10, description="Mã chứng khoán (HOSE/HNX/UPCoM)")
     company_name: Optional[str] = Field(None, max_length=255, description="Tên công ty niêm yết")
-    buy_price: float = Field(..., gt=0, description="Giá vốn (x1,000 VND)")
-    quantity: int = Field(..., ge=0, description="Số lượng cổ phiếu")
-    tp_pct: float = Field(default=7.0, ge=0.1, le=100.0, description="Ngưỡng chốt lời %")
-    sl_pct: float = Field(default=5.0, ge=0.1, le=100.0, description="Ngưỡng cắt lỗ %")
+    buy_price: float = Field(default=25.0, ge=0.0, description="Giá vốn (x1,000 VND)")
+    quantity: int = Field(default=100, ge=0, description="Số lượng cổ phiếu")
+    tp_pct: float = Field(default=7.0, ge=0.0, le=100.0, description="Ngưỡng chốt lời %")
+    sl_pct: float = Field(default=5.0, ge=0.0, le=100.0, description="Ngưỡng cắt lỗ %")
     is_active: bool = Field(default=True, description="Trạng thái theo dõi")
 
     @field_validator("ticker")
     @classmethod
     def normalize_ticker(cls, v: str) -> str:
-        return v.strip().upper()
+        cleaned = (v or "").strip().upper()
+        if len(cleaned) < 2:
+            raise ValueError("Mã cổ phiếu phải có ít nhất 2 ký tự")
+        return cleaned
 
 
 class PortfolioPositionCreate(PortfolioPositionBase):
@@ -25,15 +72,16 @@ class PortfolioPositionCreate(PortfolioPositionBase):
 
 class PortfolioPositionUpdate(BaseModel):
     company_name: Optional[str] = None
-    buy_price: Optional[float] = Field(None, gt=0)
+    buy_price: Optional[float] = Field(None, ge=0.0)
     quantity: Optional[int] = Field(None, ge=0)
-    tp_pct: Optional[float] = Field(None, ge=0.1, le=100.0)
-    sl_pct: Optional[float] = Field(None, ge=0.1, le=100.0)
+    tp_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    sl_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
     is_active: Optional[bool] = None
 
 
-
 class PortfolioPositionOut(PortfolioPositionBase):
+    id: Optional[int] = None
+    user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     current_price: Optional[float] = None
@@ -98,6 +146,7 @@ class TelegramTestRequest(BaseModel):
 # --- Alert Log Schemas ---
 class AlertLogOut(BaseModel):
     id: int
+    user_id: Optional[int] = None
     ticker: str
     alert_type: str
     triggered_price: float

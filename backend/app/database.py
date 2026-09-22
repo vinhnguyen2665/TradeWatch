@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import text
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -45,16 +46,48 @@ async def get_db():
             await session.close()
 
 
-from sqlalchemy import text
-
-
 async def init_db():
     """Create all database tables if they do not exist, and safely alter columns if needed."""
+    # Import all models to ensure metadata is populated
+    from app.models import User, PortfolioPosition, PriceHistory, SystemSetting, AlertLog
+    from app.auth import hash_password
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Tự động thêm cột company_name nếu bảng đã tồn tại từ trước
+
+        # Migration helper for portfolio_positions
         try:
+            # Check if user_id column exists
+            await conn.execute(text("ALTER TABLE portfolio_positions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;"))
             await conn.execute(text("ALTER TABLE portfolio_positions ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);"))
-        except Exception:
-            pass
+            await conn.execute(text("ALTER TABLE alert_logs ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;"))
+        except Exception as e:
+            logger.debug(f"Migration notice: {e}")
+
+    # Tạo tài khoản demo mặc định nếu hệ thống chưa có user nào
+    async with AsyncSessionLocal() as session:
+        try:
+            from sqlalchemy import select
+            user_check = await session.execute(select(User).limit(1))
+            if not user_check.scalars().first():
+                demo_user = User(
+                    username="demo",
+                    email="demo@tradewatch.vn",
+                    hashed_password=hash_password("123456"),
+                    full_name="Nhà Đầu Tư Demo",
+                    telegram_chat_id="",
+                )
+                session.add(demo_user)
+                await session.commit()
+                await session.refresh(demo_user)
+                logger.info(f"Created default demo user: username='demo', password='123456'")
+
+                # Gán các position cũ nếu có cho demo user
+                await session.execute(
+                    text(f"UPDATE portfolio_positions SET user_id = {demo_user.id} WHERE user_id IS NULL")
+                )
+                await session.commit()
+        except Exception as e:
+            logger.debug(f"Demo user check: {e}")
+
     logger.info("Database schema initialized successfully.")

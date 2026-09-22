@@ -6,6 +6,11 @@ import {
   ScreenerSignal,
   DashboardSummary,
   PositionFormData,
+  User,
+  AuthResponse,
+  LoginData,
+  RegisterData,
+  UserProfileUpdateData,
 } from '../types';
 
 const api = axios.create({
@@ -16,6 +21,54 @@ const api = axios.create({
   },
 });
 
+// Gắn JWT Bearer token tự động vào header của mỗi request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('tradewatch_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Xử lý response lỗi 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      const currentToken = localStorage.getItem('tradewatch_token');
+      if (currentToken) {
+        localStorage.removeItem('tradewatch_token');
+        localStorage.removeItem('tradewatch_user');
+        window.dispatchEvent(new Event('auth:logout'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// --- Auth APIs ---
+export const loginApi = async (data: LoginData): Promise<AuthResponse> => {
+  const res = await api.post<AuthResponse>('/auth/login', data);
+  return res.data;
+};
+
+export const registerApi = async (data: RegisterData): Promise<AuthResponse> => {
+  const res = await api.post<AuthResponse>('/auth/register', data);
+  return res.data;
+};
+
+export const getMeApi = async (): Promise<User> => {
+  const res = await api.get<User>('/auth/me');
+  return res.data;
+};
+
+export const updateProfileApi = async (data: UserProfileUpdateData): Promise<User> => {
+  const res = await api.put<User>('/auth/profile', data);
+  return res.data;
+};
+
+// --- Portfolio & Dashboard APIs ---
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
   const res = await api.get<DashboardSummary>('/dashboard/summary');
   return res.data;

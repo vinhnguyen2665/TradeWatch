@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models import PortfolioPosition, PriceHistory
+from app.models import PortfolioPosition, PriceHistory, User
 from app.schemas import (
     PortfolioPositionCreate,
     PortfolioPositionUpdate,
     PortfolioPositionOut,
 )
+from app.auth import get_current_user
 from app.crawler import stock_crawler
 
 logger = logging.getLogger(__name__)
@@ -18,12 +19,19 @@ router = APIRouter(prefix="/positions", tags=["Portfolio Positions"])
 
 
 @router.get("", response_model=List[PortfolioPositionOut])
-async def get_positions(db: AsyncSession = Depends(get_db)):
+async def get_positions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Lấy toàn bộ danh mục theo dõi, kèm tên công ty, tính toán giá hiện tại mới nhất,
-    % PnL, giá mục tiêu Chốt lời / Cắt lỗ tuyệt đối.
+    Lấy danh mục cổ phiếu của riêng người dùng đang đăng nhập, kèm tên công ty,
+    tính toán giá hiện tại mới nhất, % PnL, giá mục tiêu Chốt lời / Cắt lỗ.
     """
-    stmt = select(PortfolioPosition).order_by(PortfolioPosition.created_at.desc())
+    stmt = (
+        select(PortfolioPosition)
+        .where(PortfolioPosition.user_id == current_user.id)
+        .order_by(PortfolioPosition.created_at.desc())
+    )
     res = await db.execute(stmt)
     positions = res.scalars().all()
 
@@ -31,10 +39,14 @@ async def get_positions(db: AsyncSession = Depends(get_db)):
     need_commit = False
 
     for pos in positions:
+        if not pos.ticker or len(pos.ticker.strip()) < 2:
+            continue
+        ticker_clean = pos.ticker.strip().upper()
+
         # Tự động điền tên công ty nếu chưa có trong DB
         comp_name = pos.company_name
         if not comp_name:
-            comp_name = await stock_crawler.get_company_name(pos.ticker)
+            comp_name = await stock_crawler.get_company_name(ticker_clean)
             pos.company_name = comp_name
             need_commit = True
 
@@ -85,6 +97,8 @@ async def get_positions(db: AsyncSession = Depends(get_db)):
 
         output_list.append(
             PortfolioPositionOut(
+                id=pos.id,
+                user_id=pos.user_id,
                 ticker=pos.ticker,
                 company_name=comp_name,
                 buy_price=buy_price,
@@ -116,10 +130,11 @@ async def get_positions(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=PortfolioPositionOut, status_code=status.HTTP_201_CREATED)
 async def create_or_update_position(
     payload: PortfolioPositionCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Thêm mới hoặc cập nhật vị thế cổ phiếu trong danh mục.
+    Thêm mới hoặc cập nhật vị thế cổ phiếu trong danh mục của người dùng hiện tại.
     Tự động xác định và lưu trữ tên công ty.
     """
     ticker = payload.ticker.strip().upper()
@@ -127,13 +142,23 @@ async def create_or_update_position(
     if not company_name:
         company_name = await stock_crawler.get_company_name(ticker)
 
-    stmt = select(PortfolioPosition).where(PortfolioPosition.ticker == ticker)
+    # Nếu buy_price <= 0, tự động lấy giá thị trường thời gian thực
+    buy_price = payload.buy_price
+    if not buy_price or buy_price <= 0:
+        quote = await stock_crawler.fetch_realtime_quotes([ticker])
+        t_price = float(quote.get(ticker, {}).get("price", 0.0))
+        buy_price = t_price if t_price > 0 else 25.0
+
+    stmt = select(PortfolioPosition).where(
+        PortfolioPosition.user_id == current_user.id,
+        PortfolioPosition.ticker == ticker,
+    )
     res = await db.execute(stmt)
     existing = res.scalars().first()
 
     if existing:
         existing.company_name = company_name
-        existing.buy_price = payload.buy_price
+        existing.buy_price = buy_price
         existing.quantity = payload.quantity
         existing.tp_pct = payload.tp_pct
         existing.sl_pct = payload.sl_pct
@@ -142,9 +167,10 @@ async def create_or_update_position(
         target_pos = existing
     else:
         target_pos = PortfolioPosition(
+            user_id=current_user.id,
             ticker=ticker,
             company_name=company_name,
-            buy_price=payload.buy_price,
+            buy_price=buy_price,
             quantity=payload.quantity,
             tp_pct=payload.tp_pct,
             sl_pct=payload.sl_pct,
@@ -157,7 +183,7 @@ async def create_or_update_position(
     await db.commit()
     await db.refresh(target_pos)
 
-    # Lấy giá realtime ngay sau khi tạo để lưu price_histories
+    # Lấy giá realtime ngay sau khi tạo để lưu price_histories nếu chưa có
     quote = await stock_crawler.fetch_realtime_quotes([ticker])
     t_quote = quote.get(ticker, {})
     curr_price = float(t_quote.get("price", payload.buy_price))
@@ -179,6 +205,8 @@ async def create_or_update_position(
     pnl_val = round((curr_price - buy_p) * target_pos.quantity, 2)
 
     return PortfolioPositionOut(
+        id=target_pos.id,
+        user_id=target_pos.user_id,
         ticker=target_pos.ticker,
         company_name=target_pos.company_name,
         buy_price=buy_p,
@@ -205,39 +233,54 @@ async def create_or_update_position(
 async def update_position(
     ticker: str,
     payload: PortfolioPositionUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Cập nhật thông số của một vị thế đã có."""
+    """Cập nhật thông số của một vị thế của người dùng hiện tại."""
     ticker = ticker.strip().upper()
-    stmt = select(PortfolioPosition).where(PortfolioPosition.ticker == ticker)
+    stmt = select(PortfolioPosition).where(
+        PortfolioPosition.user_id == current_user.id,
+        PortfolioPosition.ticker == ticker,
+    )
     res = await db.execute(stmt)
     pos = res.scalars().first()
 
     if not pos:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Không tìm thấy mã {ticker} trong danh mục",
+        comp_name = payload.company_name or await stock_crawler.get_company_name(ticker)
+        pos = PortfolioPosition(
+            user_id=current_user.id,
+            ticker=ticker,
+            company_name=comp_name,
+            buy_price=payload.buy_price if payload.buy_price is not None else 25.0,
+            quantity=payload.quantity if payload.quantity is not None else 100,
+            tp_pct=payload.tp_pct if payload.tp_pct is not None else 7.0,
+            sl_pct=payload.sl_pct if payload.sl_pct is not None else 5.0,
+            is_active=payload.is_active if payload.is_active is not None else True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
+        db.add(pos)
+    else:
+        if payload.company_name is not None:
+            pos.company_name = payload.company_name
+        elif not pos.company_name:
+            pos.company_name = await stock_crawler.get_company_name(ticker)
 
-    if payload.company_name is not None:
-        pos.company_name = payload.company_name
-    elif not pos.company_name:
-        pos.company_name = await stock_crawler.get_company_name(ticker)
-
-    if payload.buy_price is not None:
-        pos.buy_price = payload.buy_price
-    if payload.quantity is not None:
-        pos.quantity = payload.quantity
-    if payload.tp_pct is not None:
-        pos.tp_pct = payload.tp_pct
-    if payload.sl_pct is not None:
-        pos.sl_pct = payload.sl_pct
-    if payload.is_active is not None:
-        pos.is_active = payload.is_active
+        if payload.buy_price is not None:
+            pos.buy_price = payload.buy_price
+        if payload.quantity is not None:
+            pos.quantity = payload.quantity
+        if payload.tp_pct is not None:
+            pos.tp_pct = payload.tp_pct
+        if payload.sl_pct is not None:
+            pos.sl_pct = payload.sl_pct
+        if payload.is_active is not None:
+            pos.is_active = payload.is_active
 
     pos.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(pos)
+
 
     # Lấy giá mới nhất
     hist_stmt = (
@@ -254,6 +297,8 @@ async def update_position(
     pnl_pct = round(((curr_price - buy_p) / buy_p) * 100.0, 2)
 
     return PortfolioPositionOut(
+        id=pos.id,
+        user_id=pos.user_id,
         ticker=pos.ticker,
         company_name=pos.company_name,
         buy_price=buy_p,
@@ -277,17 +322,24 @@ async def update_position(
 
 
 @router.delete("/{ticker}")
-async def delete_position(ticker: str, db: AsyncSession = Depends(get_db)):
-    """Xóa hoàn toàn vị thế cổ phiếu khỏi danh mục theo dõi."""
+async def delete_position(
+    ticker: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Xóa hoàn toàn vị thế cổ phiếu khỏi danh mục của người dùng hiện tại."""
     ticker = ticker.strip().upper()
-    stmt = select(PortfolioPosition).where(PortfolioPosition.ticker == ticker)
+    stmt = select(PortfolioPosition).where(
+        PortfolioPosition.user_id == current_user.id,
+        PortfolioPosition.ticker == ticker,
+    )
     res = await db.execute(stmt)
     pos = res.scalars().first()
 
     if not pos:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Không tìm thấy mã {ticker} trong danh mục",
+            detail=f"Không tìm thấy mã {ticker} trong danh mục của bạn",
         )
 
     await db.delete(pos)

@@ -13,6 +13,7 @@ class TelegramNotifier:
     """
     Module gửi cảnh báo Telegram tự động với cơ chế chống spam (Cooldown)
     và định dạng Markdown FinTech sắc nét.
+    Hỗ trợ multi-tenant: gửi cảnh báo tới Telegram Chat ID riêng của từng người dùng.
     """
 
     def __init__(self):
@@ -30,9 +31,10 @@ class TelegramNotifier:
         ticker: str,
         alert_type: str,
         cooldown_min: int,
+        user_id: Optional[int] = None,
     ) -> bool:
         """
-        Kiểm tra xem cảnh báo loại alert_type của ticker đã được gửi trong vòng cooldown_min phút chưa.
+        Kiểm tra xem cảnh báo loại alert_type của ticker cho user_id đã được gửi trong vòng cooldown_min phút chưa.
         Trả về True nếu ĐÃ ĐƯỢC PHÉP GỬI (hết cooldown hoặc chưa từng gửi), False nếu đang trong cooldown (spam).
         """
         threshold_time = datetime.now(timezone.utc) - timedelta(minutes=cooldown_min)
@@ -44,15 +46,17 @@ class TelegramNotifier:
                 AlertLog.alert_type == alert_type,
                 AlertLog.sent_at >= threshold_time,
             )
-            .order_by(desc(AlertLog.sent_at))
-            .limit(1)
         )
+        if user_id is not None:
+            stmt = stmt.where(AlertLog.user_id == user_id)
+
+        stmt = stmt.order_by(desc(AlertLog.sent_at)).limit(1)
         result = await db.execute(stmt)
         recent_log = result.scalars().first()
 
         if recent_log:
             logger.info(
-                f"Cooldown active for {ticker} [{alert_type}]. Last sent at {recent_log.sent_at}. Skipping alert."
+                f"Cooldown active for user={user_id} {ticker} [{alert_type}]. Last sent at {recent_log.sent_at}. Skipping alert."
             )
             return False
         return True
@@ -66,6 +70,7 @@ class TelegramNotifier:
         pnl_pct: float,
         company_name: str = "",
         extra_note: str = "",
+        user_name: str = "",
     ) -> str:
         """
         Định dạng tin nhắn cảnh báo Markdown đẹp mắt và chuyên nghiệp.
@@ -92,9 +97,11 @@ class TelegramNotifier:
         pnl_sign = "+" if pnl_pct >= 0 else ""
         pnl_emoji = "📈" if pnl_pct >= 0 else "📉"
         comp_str = f"🏢 *Doanh nghiệp:* _{company_name}_\n" if company_name else ""
+        user_str = f"👤 *Nhà đầu tư:* `{user_name}`\n" if user_name else ""
 
         msg = (
             f"{header}\n\n"
+            f"{user_str}"
             f"{icon} *Mã Cổ Phiếu:* `{ticker.upper()}`\n"
             f"{comp_str}"
             f"💵 *Giá Hiện Tại:* `{current_price:,.2f}` (nghìn VNĐ)\n"
@@ -118,13 +125,16 @@ class TelegramNotifier:
         pnl_pct: float,
         company_name: str = "",
         extra_note: str = "",
+        user_id: Optional[int] = None,
+        override_chat_id: Optional[str] = None,
+        user_name: str = "",
     ) -> bool:
         """
-        Thực thi kiểm tra cooldown, gửi tin nhắn tới Telegram và ghi nhận vào alert_logs.
+        Thực thi kiểm tra cooldown, gửi tin nhắn tới Telegram và ghi nhận vào alert_logs cho user.
         """
-        # 1. Đọc cấu hình
+        # 1. Đọc cấu hình bot token và chat id
         bot_token = await self.get_setting_value(db, "telegram_bot_token")
-        chat_id = await self.get_setting_value(db, "telegram_chat_id")
+        target_chat_id = override_chat_id or await self.get_setting_value(db, "telegram_chat_id")
         cooldown_val = await self.get_setting_value(db, "alert_cooldown_min", "15")
 
         try:
@@ -132,12 +142,12 @@ class TelegramNotifier:
         except ValueError:
             cooldown_min = 15
 
-        if not bot_token or not chat_id:
-            logger.warning("Telegram Bot Token or Chat ID is not configured. Skipping alert.")
+        if not bot_token or not target_chat_id:
+            logger.warning(f"Telegram Bot Token or Chat ID is not configured for user={user_id}. Skipping alert.")
             return False
 
         # 2. Kiểm tra Cooldown chống spam
-        is_allowed = await self.check_cooldown(db, ticker, alert_type, cooldown_min)
+        is_allowed = await self.check_cooldown(db, ticker, alert_type, cooldown_min, user_id=user_id)
         if not is_allowed:
             return False
 
@@ -150,13 +160,15 @@ class TelegramNotifier:
             pnl_pct=pnl_pct,
             company_name=company_name,
             extra_note=extra_note,
+            user_name=user_name,
         )
 
-        success = await self._send_raw_message(bot_token, chat_id, message)
+        success = await self._send_raw_message(bot_token, target_chat_id, message)
 
         # 4. Ghi log nếu gửi thành công
         if success:
             log_entry = AlertLog(
+                user_id=user_id,
                 ticker=ticker.upper(),
                 alert_type=alert_type,
                 triggered_price=current_price,
@@ -165,7 +177,7 @@ class TelegramNotifier:
             )
             db.add(log_entry)
             await db.commit()
-            logger.info(f"Telegram alert sent and logged for {ticker} [{alert_type}]")
+            logger.info(f"Telegram alert sent and logged for user={user_id} {ticker} [{alert_type}]")
             return True
 
         return False

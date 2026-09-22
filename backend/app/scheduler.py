@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select
 from app.database import AsyncSessionLocal
-from app.models import PortfolioPosition, PriceHistory, SystemSetting
+from app.models import PortfolioPosition, PriceHistory, SystemSetting, User
 from app.crawler import stock_crawler
 from app.telegram_bot import telegram_notifier
 
@@ -138,52 +138,68 @@ class StockSchedulerService:
 
                 logger.info(f"--- [Scheduler] Bắt đầu chu kỳ quét danh mục ({market_status['session_name']}) ---")
 
-                # 3. Lấy các vị thế active
-                stmt = select(PortfolioPosition).where(PortfolioPosition.is_active == True)
+                # 3. Lấy các vị thế active kèm thông tin User sở hữu
+                stmt = (
+                    select(PortfolioPosition, User)
+                    .join(User, PortfolioPosition.user_id == User.id)
+                    .where(PortfolioPosition.is_active == True)
+                )
                 res = await db.execute(stmt)
-                positions = res.scalars().all()
+                rows = res.all()
 
-                if not positions:
-                    logger.info("[Scheduler] Không có mã cổ phiếu active nào trong danh mục.")
+                if not rows:
+                    logger.info("[Scheduler] Không có mã cổ phiếu active nào trong danh mục của các người dùng.")
                     return
 
-                tickers = [p.ticker for p in positions]
-                logger.info(f"[Scheduler] Đang quét {len(tickers)} mã: {tickers}")
+                # Deduplicate danh sách mã cần crawl để tối ưu 1 request duy nhất tới sàn
+                unique_tickers = list(
+                    set(pos.ticker.strip().upper() for pos, user in rows if pos.ticker and len(pos.ticker.strip()) >= 2)
+                )
+                if not unique_tickers:
+                    return
 
-                # 4. Thu thập giá thời gian thực
-                quotes = await stock_crawler.fetch_realtime_quotes(tickers)
+                logger.info(f"[Scheduler] Đang quét {len(rows)} vị thế từ {len(unique_tickers)} mã duy nhất: {unique_tickers}")
 
-                # 5. Ghi nhận lịch sử giá và kiểm tra TP/SL
+                # 4. Thu thập giá thời gian thực từ sàn
+                quotes = await stock_crawler.fetch_realtime_quotes(unique_tickers)
+
+                # 5. Ghi nhận lịch sử giá cho các mã duy nhất
                 new_histories = []
-                for pos in positions:
+                now_utc = datetime.now(timezone.utc)
+                for ticker in unique_tickers:
+                    quote = quotes.get(ticker)
+                    if quote:
+                        new_histories.append(
+                            PriceHistory(
+                                ticker=ticker,
+                                price=float(quote["price"]),
+                                volume=int(quote["volume"]),
+                                change_pct=float(quote["change_pct"]),
+                                timestamp=now_utc,
+                            )
+                        )
+
+                if new_histories:
+                    db.add_all(new_histories)
+                    await db.commit()
+                    logger.info(f"[Scheduler] Đã lưu {len(new_histories)} bản ghi giá mới vào price_histories.")
+
+                # 6. So sánh PnL cho từng vị thế của từng user và kích hoạt Telegram Alert
+                for pos, user in rows:
                     quote = quotes.get(pos.ticker)
                     if not quote:
                         continue
 
                     current_price = float(quote["price"])
-                    volume = int(quote["volume"])
-                    change_pct = float(quote["change_pct"])
                     buy_price = float(pos.buy_price)
                     tp_pct = float(pos.tp_pct)
                     sl_pct = float(pos.sl_pct)
 
-                    # Thêm vào bulk price_histories
-                    new_histories.append(
-                        PriceHistory(
-                            ticker=pos.ticker,
-                            price=current_price,
-                            volume=volume,
-                            change_pct=change_pct,
-                            timestamp=datetime.now(timezone.utc),
-                        )
-                    )
-
                     # Tính toán PnL %
                     pnl_pct = ((current_price - buy_price) / buy_price) * 100.0
 
-                    # 6. Kích hoạt Cảnh báo TP / SL
                     if pnl_pct >= tp_pct:
-                        logger.info(f"🎯 [TP TRIGGER] {pos.ticker}: PnL +{pnl_pct:.2f}% >= TP +{tp_pct:.2f}%")
+                        logger.info(f"🎯 [TP TRIGGER] User={user.username} {pos.ticker}: PnL +{pnl_pct:.2f}% >= TP +{tp_pct:.2f}%")
                         await telegram_notifier.send_alert(
                             db=db,
                             ticker=pos.ticker,
@@ -193,9 +209,12 @@ class StockSchedulerService:
                             pnl_pct=round(pnl_pct, 2),
                             company_name=pos.company_name or "",
                             extra_note=f"Đạt mục tiêu chốt lời (+{tp_pct}%).",
+                            user_id=pos.user_id,
+                            override_chat_id=user.telegram_chat_id,
+                            user_name=user.full_name or user.username,
                         )
                     elif pnl_pct <= -sl_pct:
-                        logger.info(f"⚠️ [SL TRIGGER] {pos.ticker}: PnL {pnl_pct:.2f}% <= SL -{sl_pct:.2f}%")
+                        logger.info(f"⚠️ [SL TRIGGER] User={user.username} {pos.ticker}: PnL {pnl_pct:.2f}% <= SL -{sl_pct:.2f}%")
                         await telegram_notifier.send_alert(
                             db=db,
                             ticker=pos.ticker,
@@ -205,13 +224,11 @@ class StockSchedulerService:
                             pnl_pct=round(pnl_pct, 2),
                             company_name=pos.company_name or "",
                             extra_note=f"Chạm ngưỡng cắt lỗ phòng hộ (-{sl_pct}%).",
+                            user_id=pos.user_id,
+                            override_chat_id=user.telegram_chat_id,
+                            user_name=user.full_name or user.username,
                         )
 
-                # Lưu toàn bộ price history trong chu kỳ
-                if new_histories:
-                    db.add_all(new_histories)
-                    await db.commit()
-                    logger.info(f"[Scheduler] Đã lưu {len(new_histories)} bản ghi giá mới vào price_histories.")
 
             except Exception as e:
                 logger.error(f"[Scheduler] Lỗi trong quá trình chạy chu kỳ quét: {e}", exc_info=True)

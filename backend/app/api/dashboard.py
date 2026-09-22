@@ -5,9 +5,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models import PortfolioPosition, PriceHistory, SystemSetting, AlertLog
+from app.models import PortfolioPosition, PriceHistory, SystemSetting, AlertLog, User
 from app.schemas import DashboardSummary, PortfolioPositionOut, AlertLogOut
 from app.scheduler import scheduler_service, get_vietnam_market_status
+from app.auth import get_current_user
 from app.api.positions import get_positions
 
 logger = logging.getLogger(__name__)
@@ -15,16 +16,19 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 @router.get("/summary", response_model=DashboardSummary)
-async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_summary(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Thống kê tổng quan danh mục đầu tư:
-    - Tổng số mã, mã active
+    Thống kê tổng quan danh mục đầu tư riêng của người dùng hiện tại:
+    - Tổng số mã, mã active của user
     - Tổng vốn đầu tư (x1,000 VND), giá trị thị trường hiện tại, tổng Lãi/Lỗ
     - Mã tăng mạnh nhất (Top Gainer) & Mã giảm sâu nhất (Top Loser)
-    - Trạng thái Bot, Trạng thái Phiên giao dịch (Market Status) & Các cảnh báo gần nhất
+    - Trạng thái Bot, Trạng thái Phiên giao dịch (Market Status) & Các cảnh báo của user
     """
-    # Lấy danh sách positions đã tính toán đầy đủ
-    positions: List[PortfolioPositionOut] = await get_positions(db)
+    # Lấy danh sách positions của riêng user
+    positions: List[PortfolioPositionOut] = await get_positions(current_user=current_user, db=db)
 
     total_positions = len(positions)
     active_positions = sum(1 for p in positions if p.is_active)
@@ -34,7 +38,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
     total_pnl_value = current_portfolio_value - total_investment
     total_pnl_pct = round((total_pnl_value / total_investment) * 100.0, 2) if total_investment > 0 else 0.0
 
-    # Top Gainer & Loser
+    # Top Gainer & Loser trong danh mục của user
     sorted_by_pnl = sorted(positions, key=lambda p: p.pnl_pct or 0.0, reverse=True)
     top_gainer = sorted_by_pnl[0] if sorted_by_pnl else None
     top_loser = sorted_by_pnl[-1] if sorted_by_pnl and len(sorted_by_pnl) > 1 else None
@@ -52,8 +56,13 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
 
     market_status = get_vietnam_market_status()
 
-    # Lấy 10 alert logs gần nhất
-    alert_stmt = select(AlertLog).order_by(desc(AlertLog.sent_at)).limit(10)
+    # Lấy 10 alert logs gần nhất của riêng user
+    alert_stmt = (
+        select(AlertLog)
+        .where((AlertLog.user_id == current_user.id) | (AlertLog.user_id == None))
+        .order_by(desc(AlertLog.sent_at))
+        .limit(10)
+    )
     alert_res = await db.execute(alert_stmt)
     alert_logs = alert_res.scalars().all()
 
@@ -74,6 +83,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
         recent_alerts=[
             AlertLogOut(
                 id=a.id,
+                user_id=a.user_id,
                 ticker=a.ticker,
                 alert_type=a.alert_type,
                 triggered_price=float(a.triggered_price),
@@ -86,7 +96,10 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/toggle-bot")
-async def toggle_bot_status(db: AsyncSession = Depends(get_db)):
+async def toggle_bot_status(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Chuyển đổi trạng thái Bot giữa RUNNING và PAUSED nhanh chóng."""
     stmt = select(SystemSetting).where(SystemSetting.key == "bot_status")
     res = await db.execute(stmt)

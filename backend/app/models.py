@@ -8,17 +8,47 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Index,
+    ForeignKey,
+    UniqueConstraint,
     desc,
 )
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
 
+class User(Base):
+    """Bảng người dùng hệ thống phục vụ xác thực JWT và phân quyền danh mục."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(255), nullable=True)
+    telegram_chat_id = Column(String(100), nullable=True, comment="Telegram Chat ID riêng của từng người dùng")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    positions = relationship("PortfolioPosition", back_populates="user", cascade="all, delete-orphan")
+    alerts = relationship("AlertLog", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User id={self.id} username={self.username} email={self.email}>"
+
+
 class PortfolioPosition(Base):
-    """Bảng lưu trữ danh mục cổ phiếu cần theo dõi và ngưỡng TP/SL."""
+    """Bảng lưu trữ danh mục cổ phiếu cần theo dõi và ngưỡng TP/SL của từng người dùng."""
     __tablename__ = "portfolio_positions"
 
-    ticker = Column(String(10), primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    ticker = Column(String(10), nullable=False, index=True)
     company_name = Column(String(255), nullable=True, comment="Tên công ty niêm yết")
     buy_price = Column(Numeric(10, 2), nullable=False, comment="Giá vốn (x1,000 VND)")
     quantity = Column(Integer, nullable=False, default=100, comment="Số lượng cổ phiếu")
@@ -33,8 +63,14 @@ class PortfolioPosition(Base):
         nullable=False,
     )
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "ticker", name="uq_user_ticker"),
+    )
+
+    user = relationship("User", back_populates="positions")
+
     def __repr__(self):
-        return f"<PortfolioPosition {self.ticker} ({self.company_name}): Buy={self.buy_price} Qty={self.quantity} TP={self.tp_pct}% SL={self.sl_pct}%>"
+        return f"<PortfolioPosition user={self.user_id} {self.ticker} ({self.company_name}): Buy={self.buy_price} Qty={self.quantity} TP={self.tp_pct}% SL={self.sl_pct}%>"
 
 
 class PriceHistory(Base):
@@ -78,6 +114,7 @@ class AlertLog(Base):
     __tablename__ = "alert_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     ticker = Column(String(10), nullable=False, index=True)
     alert_type = Column(
         String(20),
@@ -94,5 +131,7 @@ class AlertLog(Base):
         index=True,
     )
 
+    user = relationship("User", back_populates="alerts")
+
     def __repr__(self):
-        return f"<AlertLog {self.ticker} [{self.alert_type}] Price={self.triggered_price} PnL={self.pnl_pct}% Time={self.sent_at}>"
+        return f"<AlertLog user={self.user_id} {self.ticker} [{self.alert_type}] Price={self.triggered_price} PnL={self.pnl_pct}% Time={self.sent_at}>"
