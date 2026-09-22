@@ -316,7 +316,11 @@ Hãy trả về JSON với cấu trúc chính xác sau (Bắt buộc phân bổ 
                     parsed_dict = json.loads(clean_json_str)
 
                     # Validate & parse through Pydantic
+                    parsed_dict["ai_provider"] = "gemini"
+                    parsed_dict["ai_model"] = current_m
                     allocation_result = PortfolioAllocationResult(**parsed_dict)
+                    allocation_result.ai_provider = "gemini"
+                    allocation_result.ai_model = current_m
                     
                     # Chuẩn hóa số học 100% chính xác (khử sai số / hallucination của AI)
                     allocation_result = self._normalize_allocation_result(

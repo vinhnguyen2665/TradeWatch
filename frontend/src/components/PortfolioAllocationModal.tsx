@@ -868,7 +868,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
   <div class="header">
     <div>
       <h1>Báo Cáo Phân Bổ Vốn & Chiến Lược Đầu Tư AI</h1>
-      <div class="meta">Hệ thống TradeWatch Robo-Advisor • Sinh tự động bởi Gemini AI</div>
+      <div class="meta">Hệ thống TradeWatch Robo-Advisor • Sinh tự động bởi <b>${record.data.ai_provider === 'openai' ? 'OpenAI ChatGPT' : record.data.ai_provider === 'local' ? 'Local AI' : 'Google Gemini'}</b> ${record.data.ai_model ? `(Model: <code>${record.data.ai_model}</code>)` : ''}</div>
     </div>
     <div style="text-align: right;">
       <div class="meta">Thời gian lập: <b>${createdDate}</b></div>
@@ -956,7 +956,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       title: 'Thời Gian Lập',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 155,
+      width: 150,
       render: (val: string) => {
         const d = new Date(val);
         return (
@@ -968,10 +968,31 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       },
     },
     {
+      title: 'Mô Hình AI',
+      key: 'ai_model_info',
+      width: 175,
+      render: (_: any, record: PortfolioAllocationRecord) => {
+        const prov = record.data?.ai_provider || 'gemini';
+        const model = record.data?.ai_model || 'gemini-3.5-flash';
+        const color = prov === 'openai' ? 'green' : prov === 'local' ? 'purple' : 'blue';
+        const provName = prov === 'openai' ? 'OpenAI' : prov === 'local' ? 'Local AI' : 'Gemini';
+        return (
+          <div className="flex flex-col gap-0.5">
+            <Tag color={color} className="font-bold text-[10px] w-fit uppercase px-1.5 py-0 leading-tight">
+              {provName}
+            </Tag>
+            <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300 font-semibold truncate max-w-[155px]" title={model}>
+              {model}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
       title: 'Tổng Vốn',
       dataIndex: 'total_capital',
       key: 'total_capital',
-      width: 140,
+      width: 135,
       render: (val: number) => (
         <span className="font-bold mono-font text-blue-600 dark:text-blue-400 text-sm">
           {formatVnd(val)}
@@ -1528,7 +1549,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                   <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl relative overflow-hidden border border-indigo-500/20">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button
                             size="small"
                             icon={<Printer className="w-3.5 h-3.5" />}
@@ -1539,6 +1560,20 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
                           </Button>
                           <Tag color="cyan" className="font-bold uppercase text-[11px]">
                             {currentResult.data.risk_profile} STRATEGY
+                          </Tag>
+                          <Tag
+                            color="blue"
+                            className="font-mono font-bold text-[11px] border-indigo-400/40 bg-indigo-900/70 text-indigo-200 flex items-center gap-1.5 px-2.5 py-0.5 rounded-md"
+                          >
+                            <Sparkles className="w-3 h-3 text-indigo-300 shrink-0" />
+                            <span>
+                              {currentResult.data.ai_provider === 'openai'
+                                ? 'OpenAI'
+                                : currentResult.data.ai_provider === 'local'
+                                ? 'Local AI'
+                                : 'Google Gemini'}
+                              {currentResult.data.ai_model ? ` • ${currentResult.data.ai_model}` : ''}
+                            </span>
                           </Tag>
                           <span className="text-xs text-slate-400">
                             Khởi tạo: {new Date(currentResult.created_at).toLocaleString('vi-VN')}

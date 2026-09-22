@@ -200,6 +200,8 @@ export interface PortfolioAllocationResult {
   market_cycle_assessment: string;
   risk_management_rules: string[];
   estimated_portfolio_yield?: string;
+  ai_provider?: AIProviderType | string;
+  ai_model?: string;
 }
 
 export interface PortfolioAllocationRequest {

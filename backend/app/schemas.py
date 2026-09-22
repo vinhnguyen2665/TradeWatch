@@ -214,6 +214,8 @@ class PortfolioAllocationResult(BaseModel):
     market_cycle_assessment: str = Field(..., description="Đánh giá bối cảnh thị trường & xu hướng dòng tiền")
     risk_management_rules: List[str] = Field(default=[], description="Quy tắc quản trị vốn & kỷ luật giao dịch")
     estimated_portfolio_yield: Optional[str] = Field(None, description="Kỳ vọng lợi nhuận danh mục trung hạn")
+    ai_provider: Optional[str] = Field(None, description="Nhà cung cấp AI: gemini | openai | local")
+    ai_model: Optional[str] = Field(None, description="Tên / Mã model AI (VD: gemini-2.5-flash, gpt-4o, llama3.1...)")
 
 
 class PortfolioAllocationRequest(BaseModel):

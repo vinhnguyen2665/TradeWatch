@@ -310,13 +310,22 @@ Yêu cầu trả về đúng cấu trúc JSON sau:
                 raise ValueError("AI không trả về kết quả nội dung.")
 
             raw_content = choices[0].get("message", {}).get("content", "")
-            return self._parse_json_result(raw_content, total_capital, risk_profile)
+            provider_type = "openai" if is_openai_official else "local"
+            return self._parse_json_result(
+                raw_content,
+                total_capital,
+                risk_profile,
+                ai_provider=provider_type,
+                ai_model=active_model,
+            )
 
     def _parse_json_result(
         self,
         raw_text: str,
         total_capital: float,
         risk_profile: str,
+        ai_provider: Optional[str] = None,
+        ai_model: Optional[str] = None,
     ) -> PortfolioAllocationResult:
         clean = raw_text.strip()
         if clean.startswith("```"):
@@ -326,10 +335,15 @@ Yêu cầu trả về đúng cấu trúc JSON sau:
         data = json.loads(clean.strip())
         data["total_capital"] = total_capital
         data["risk_profile"] = risk_profile
+        data["ai_provider"] = ai_provider
+        data["ai_model"] = ai_model
 
         # Chuẩn hóa dữ liệu toán học
         data = self._normalize_allocation_result(data, total_capital)
-        return PortfolioAllocationResult(**data)
+        result = PortfolioAllocationResult(**data)
+        result.ai_provider = ai_provider
+        result.ai_model = ai_model
+        return result
 
     def _normalize_allocation_result(self, data: Dict[str, Any], total_capital: float) -> Dict[str, Any]:
         """Đảm bảo số học chính xác 100% và chuẩn lô 100 CP."""
