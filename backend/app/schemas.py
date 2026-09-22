@@ -8,7 +8,7 @@ class PortfolioPositionBase(BaseModel):
     ticker: str = Field(..., max_length=10, description="Mã chứng khoán (HOSE/HNX)")
     company_name: Optional[str] = Field(None, max_length=255, description="Tên công ty niêm yết")
     buy_price: float = Field(..., gt=0, description="Giá vốn (x1,000 VND)")
-    quantity: int = Field(..., gt=0, description="Số lượng cổ phiếu")
+    quantity: int = Field(..., ge=0, description="Số lượng cổ phiếu")
     tp_pct: float = Field(default=7.0, ge=0.1, le=100.0, description="Ngưỡng chốt lời %")
     sl_pct: float = Field(default=5.0, ge=0.1, le=100.0, description="Ngưỡng cắt lỗ %")
     is_active: bool = Field(default=True, description="Trạng thái theo dõi")
@@ -26,10 +26,11 @@ class PortfolioPositionCreate(PortfolioPositionBase):
 class PortfolioPositionUpdate(BaseModel):
     company_name: Optional[str] = None
     buy_price: Optional[float] = Field(None, gt=0)
-    quantity: Optional[int] = Field(None, gt=0)
+    quantity: Optional[int] = Field(None, ge=0)
     tp_pct: Optional[float] = Field(None, ge=0.1, le=100.0)
     sl_pct: Optional[float] = Field(None, ge=0.1, le=100.0)
     is_active: Optional[bool] = None
+
 
 
 class PortfolioPositionOut(PortfolioPositionBase):

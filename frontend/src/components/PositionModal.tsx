@@ -117,8 +117,8 @@ export const PositionModal: React.FC<PositionModalProps> = ({
             rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
           >
             <InputNumber
-              min={100}
-              step={100}
+              min={0}
+              step={1}
               className="w-full mono-font"
               formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             />

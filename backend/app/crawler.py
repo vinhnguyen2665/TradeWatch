@@ -18,14 +18,15 @@ SSI_HEADERS = {
 class StockCrawler:
     """
     Async Stock Crawler kết nối trực tiếp đến API bảng giá thời gian thực từ các Sở Giao Dịch
-    (HOSE, HNX, UPCoM) qua SSI iBoard REST/WebSocket feeds.
+    (HOSE, HNX, UPCoM) qua SSI iBoard REST feeds.
     Không dùng Headless Browser, tự động cập nhật toàn bộ 1,500+ mã niêm yết và tên doanh nghiệp.
+    Đảm bảo luôn fetch giá mới nhất từ sàn trong mỗi chu kỳ quét.
     """
 
     def __init__(self, timeout_sec: float = 6.0):
         self.timeout = timeout_sec
         self._price_cache: Dict[str, Dict[str, Any]] = {}
-        self._company_directory: Dict[str, Dict[str, str]] = {}  # { "TAL": {"name": "Công ty...", "exchange": "HOSE"} }
+        self._company_directory: Dict[str, Dict[str, str]] = {}  # { "TAL": {"name": "Công ty...", "exchange": "hose"} }
         self._last_directory_fetch: Optional[datetime] = None
 
     async def _ensure_exchange_directory(self, force: bool = False):
@@ -35,7 +36,7 @@ class StockCrawler:
         """
         now = datetime.now(timezone.utc)
         if not force and self._company_directory and self._last_directory_fetch:
-            # Cache danh bạ 12 tiếng
+            # Cache danh bạ tên công ty 12 tiếng
             if (now - self._last_directory_fetch).total_seconds() < 43200:
                 return
 
@@ -55,21 +56,8 @@ class StockCrawler:
                                 name = item.get("companyNameVi") or item.get("clientName") or item.get("companyNameEn") or f"Công ty Cổ phần {sym_upper}"
                                 self._company_directory[sym_upper] = {
                                     "name": name,
-                                    "exchange": item.get("exchange", ex).upper(),
+                                    "exchange": item.get("exchange", ex).lower(),
                                 }
-                                # Lưu luôn giá thị trường hiện tại vào cache nếu có
-                                matched_p = item.get("matchedPrice") or item.get("refPrice") or 0
-                                if matched_p > 0:
-                                    price_k = float(matched_p) / 1000.0 if float(matched_p) > 1000 else float(matched_p)
-                                    change_pct = float(item.get("priceChangePercent", 0.0))
-                                    vol = int(item.get("nmTotalTradedQty") or item.get("stockVol") or 0)
-                                    self._price_cache[sym_upper] = {
-                                        "ticker": sym_upper,
-                                        "price": round(price_k, 2),
-                                        "volume": vol,
-                                        "change_pct": round(change_pct, 2),
-                                        "timestamp": now,
-                                    }
                         logger.info(f"Loaded {len(items)} stock symbols & company names from {ex.upper()}.")
                 except Exception as e:
                     logger.debug(f"Error loading exchange directory for {ex}: {e}")
@@ -97,23 +85,76 @@ class StockCrawler:
 
     async def fetch_realtime_quotes(self, tickers: List[str]) -> Dict[str, Dict[str, Any]]:
         """
-        Lấy giá khớp lệnh thời gian thực và thông tin biến động của danh sách tickers
-        trực tiếp từ sàn giao dịch qua SSI iBoard.
+        Lấy giá khớp lệnh thời gian thực MỚI NHẤT và thông tin biến động của danh sách tickers
+        trực tiếp từ sàn giao dịch (HOSE, HNX, UPCoM) qua SSI iBoard REST API.
+        Luôn thực hiện async fetch tới sàn để đảm bảo đồng bộ tức thì khi giá thay đổi.
         """
         if not tickers:
             return {}
 
         await self._ensure_exchange_directory()
 
-        results: Dict[str, Dict[str, Any]] = {}
         unique_tickers = list(set(t.upper() for t in tickers))
+        
+        # Xác định sàn cần gọi API để tối ưu tốc độ
+        needed_exchanges = set()
+        for t in unique_tickers:
+            ex = self._company_directory.get(t, {}).get("exchange")
+            if ex:
+                needed_exchanges.add(ex.lower())
+            else:
+                # Nếu chưa rõ sàn, quét cả 3 sàn
+                needed_exchanges.update(["hose", "hnx", "upcom"])
 
+        if not needed_exchanges:
+            needed_exchanges = {"hose", "hnx", "upcom"}
+
+        now = datetime.now(timezone.utc)
+        results: Dict[str, Dict[str, Any]] = {}
+
+        async def _fetch_single_exchange(client: httpx.AsyncClient, ex: str):
+            url = f"https://iboard-query.ssi.com.vn/stock/exchange/{ex}"
+            try:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    return ex, resp.json().get("data", [])
+            except Exception as e:
+                logger.warning(f"Error fetching realtime quotes from {ex}: {e}")
+            return ex, []
+
+        try:
+            async with httpx.AsyncClient(headers=SSI_HEADERS, timeout=self.timeout) as client:
+                exchange_tasks = [_fetch_single_exchange(client, ex) for ex in needed_exchanges]
+                ex_results = await asyncio.gather(*exchange_tasks)
+
+                for ex, items in ex_results:
+                    for item in items:
+                        sym = item.get("stockSymbol")
+                        if sym:
+                            sym_upper = sym.upper()
+                            # Lấy giá khớp lệnh mới nhất (matchedPrice), nếu chưa khớp thì lấy giá tham chiếu (refPrice)
+                            matched_p = item.get("matchedPrice") or item.get("refPrice") or item.get("priorClosePrice") or 0
+                            if matched_p > 0:
+                                price_k = float(matched_p) / 1000.0 if float(matched_p) > 1000 else float(matched_p)
+                                change_pct = float(item.get("priceChangePercent", 0.0))
+                                vol = int(item.get("nmTotalTradedQty") or item.get("stockVol") or 0)
+                                quote_data = {
+                                    "ticker": sym_upper,
+                                    "price": round(price_k, 2),
+                                    "volume": vol,
+                                    "change_pct": round(change_pct, 2),
+                                    "timestamp": now,
+                                }
+                                self._price_cache[sym_upper] = quote_data
+
+        except Exception as e:
+            logger.error(f"Error in realtime quote polling: {e}")
+
+        # Đóng gói kết quả cho các mã được yêu cầu
         for ticker in unique_tickers:
             if ticker in self._price_cache:
                 results[ticker] = self._price_cache[ticker]
             else:
-                # Nếu chưa có trong cache giá
-                cached_name = self._company_directory.get(ticker, {}).get("name", f"Công ty Cổ phần {ticker}")
                 fallback = self._get_fallback_or_simulated_price(ticker)
                 results[ticker] = fallback
                 self._price_cache[ticker] = fallback
