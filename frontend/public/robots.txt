@@ -1,0 +1,16 @@
+# https://www.robotstxt.org/robotstxt.html
+# TradeWatch - Vietnam Realtime Stock Monitoring & Telegram Alert Platform
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /assets/
+
+# Disallow private API endpoints & internal admin paths
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /settings/
+
+# Sitemaps
+Sitemap: https://tradewatch.vn/sitemap.xml
