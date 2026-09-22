@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Badge, Tag, Tooltip, Dropdown, Avatar } from 'antd';
+import { Card, Button, Badge, Tag, Tooltip, Dropdown, Avatar, MenuProps } from 'antd';
 import {
   PlayCircle,
   PauseCircle,
@@ -28,7 +28,7 @@ interface HeaderStatsProps {
   onToggleTheme: () => void;
   onRefresh: () => void;
   onToggleBot: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (focusField?: string) => void;
   onOpenScreener: () => void;
   onOpenAllocation: () => void;
   onOpenAddModal: () => void;
@@ -56,7 +56,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
   const totalPnlPct = summary?.total_pnl_pct ?? 0;
   const isProfit = totalPnl >= 0;
 
-  const userMenuItems = [
+  const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       label: (
@@ -71,17 +71,22 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400">{user?.email}</div>
           {user?.telegram_chat_id ? (
-            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+            <div
+              onClick={() => onOpenSettings?.('telegram')}
+              className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 cursor-pointer hover:underline"
+            >
               <Send className="w-3 h-3" /> TG: {user.telegram_chat_id}
             </div>
           ) : (
-            <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-              Chưa gán Telegram Chat ID
+            <div
+              onClick={() => onOpenSettings?.('telegram')}
+              className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 cursor-pointer hover:underline"
+            >
+              ⚠️ Chưa gán Telegram Chat ID (Bấm để cài)
             </div>
           )}
         </div>
       ),
-      disabled: true,
     },
     {
       type: 'divider' as const,
@@ -108,8 +113,8 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
     {
       key: 'settings',
       icon: <SlidersHorizontal className="w-3.5 h-3.5" />,
-      label: isAdmin ? 'Cài đặt Hệ thống & AI Key' : 'Cài đặt AI Engine & API Key',
-      onClick: onOpenSettings,
+      label: isAdmin ? 'Cài đặt Hệ thống, AI & Telegram' : 'Cài đặt AI & Telegram Cảnh Báo',
+      onClick: () => onOpenSettings(),
     },
     {
       key: 'logout',
@@ -291,7 +296,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
               type="default"
               size="middle"
               icon={<SlidersHorizontal className="w-4 h-4 text-slate-700 dark:text-slate-300" />}
-              onClick={onOpenSettings}
+              onClick={() => onOpenSettings()}
               className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-500 bg-white dark:bg-slate-800"
             >
               Cài đặt

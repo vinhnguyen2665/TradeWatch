@@ -179,7 +179,7 @@ const DashboardView: React.FC<{
           onToggleTheme={onToggleTheme}
           onRefresh={() => loadData(false)}
           onToggleBot={handleToggleBot}
-          onOpenSettings={() => setSettingsVisible(true)}
+          onOpenSettings={handleOpenSettings}
           onOpenScreener={() => setScreenerVisible(true)}
           onOpenAllocation={() => setAllocationVisible(true)}
           onOpenAdminUsers={() => setAdminUsersVisible(true)}

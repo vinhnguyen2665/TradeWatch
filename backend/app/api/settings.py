@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import SystemSetting, User
-from app.auth import get_current_admin_user
+from app.auth import get_current_admin_user, get_current_user
 from app.schemas import (
     SystemSettingsOut,
     SystemSettingsUpdate,
@@ -149,28 +149,31 @@ async def update_settings(
 @router.post("/test-telegram")
 async def test_telegram_connection(
     payload: TelegramTestRequest,
-    current_admin: User = Depends(get_current_admin_user),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Gửi tin nhắn thử nghiệm tới Telegram để kiểm tra Token và Chat ID."""
     token = payload.bot_token
     chat_id = payload.chat_id
 
-    # Nếu không gửi kèm trong body, lấy từ Database
+    # Nếu không gửi kèm trong body, lấy bot token của hệ thống từ Database
     if not token:
         stmt = select(SystemSetting.value).where(SystemSetting.key == "telegram_bot_token")
         res = await db.execute(stmt)
         token = res.scalars().first()
 
+    # Nếu không gửi kèm chat_id, lấy từ profile của user hiện tại hoặc chat_id admin
     if not chat_id:
-        stmt = select(SystemSetting.value).where(SystemSetting.key == "telegram_chat_id")
-        res = await db.execute(stmt)
-        chat_id = res.scalars().first()
+        chat_id = current_user.telegram_chat_id
+        if not chat_id and current_user.role == "admin":
+            stmt = select(SystemSetting.value).where(SystemSetting.key == "telegram_chat_id")
+            res = await db.execute(stmt)
+            chat_id = res.scalars().first()
 
     if not token or not chat_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Vui lòng cung cấp đầy đủ Telegram Bot Token và Chat ID để kiểm tra",
+            detail="Vui lòng cung cấp Telegram Chat ID để nhận tin thử nghiệm (hoặc liên hệ Quản trị viên cấu hình Telegram Bot Token hệ thống).",
         )
 
     result = await telegram_notifier.send_test_message(
