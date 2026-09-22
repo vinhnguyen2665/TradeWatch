@@ -243,6 +243,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       prefix={<Send className="w-4 h-4 text-slate-400 mr-1" />}
                       placeholder="VD: 123456789"
                       className="rounded-lg h-10 mono-font"
+                      autoComplete="off"
+                      spellCheck={false}
                     />
                   </Form.Item>
 

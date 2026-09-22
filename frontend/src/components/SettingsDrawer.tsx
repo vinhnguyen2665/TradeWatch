@@ -211,12 +211,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         await updateSettings(sysPayload);
       }
 
-      message.success(isAdmin ? 'Cập nhật cấu hình hệ thống & Telegram thành công!' : 'Lưu cấu hình AI & Telegram cá nhân thành công!');
+      message.success(isAdmin ? t('settings.saveSuccessAdmin') : t('settings.saveSuccessUser'));
       onSettingsUpdated();
       onClose();
     } catch (err: any) {
       console.error('Lỗi lưu cài đặt:', err);
-      message.error(err.response?.data?.detail || 'Lỗi khi lưu cài đặt');
+      message.error(err.response?.data?.detail || t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -233,11 +233,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           chat_id: currentChatId || undefined,
         });
         if (res.success) {
-          message.success('Đã gửi tin nhắn thử nghiệm tới Telegram!');
+          message.success(t('settings.testSuccess'));
         }
       } else {
         if (!userTelegramChatId || !userTelegramChatId.trim()) {
-          message.warning('Vui lòng nhập Telegram Chat ID của bạn trước khi thử nghiệm.');
+          message.warning(t('settings.tgIdUnbound'));
           setTestingTelegram(false);
           return;
         }
@@ -245,11 +245,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           chat_id: userTelegramChatId.trim(),
         });
         if (res.success) {
-          message.success('Đã gửi tin nhắn thử nghiệm tới Telegram của bạn!');
+          message.success(t('settings.testSuccess'));
         }
       }
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Gửi thử nghiệm thất bại. Vui lòng kiểm tra lại Telegram Chat ID hoặc liên hệ Quản trị viên cấu hình Bot Token.');
+      message.error(err.response?.data?.detail || t('settings.testFail'));
     } finally {
       setTestingTelegram(false);
     }
@@ -264,10 +264,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           </div>
           <div>
             <div className="text-sm font-bold text-slate-900 dark:text-white">
-              {isAdmin ? 'Cài Đặt Hệ Thống & AI Engine' : 'Cài Đặt AI & Telegram Cảnh Báo'}
+              {isAdmin ? t('settings.titleAdmin') : t('settings.titleUser')}
             </div>
             <div className="text-[11px] font-normal text-slate-500">
-              {isAdmin ? 'Quản lý API Key, chu kỳ quét giá & Telegram Bot hệ thống' : 'Quản lý API Key riêng và Telegram Chat ID nhận cảnh báo TP/SL'}
+              {isAdmin ? t('settings.descAdmin') : t('settings.descUser')}
             </div>
           </div>
         </div>
@@ -284,7 +284,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           loading={saving || loading}
           className="bg-blue-600 hover:bg-blue-500 font-semibold"
         >
-          Lưu Cài Đặt
+          {t('settings.saveAllBtn')}
         </Button>
       }
     >
@@ -300,7 +300,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 label: (
                   <span className="flex items-center gap-1.5 font-semibold text-xs">
                     <Clock className="w-3.5 h-3.5 text-blue-500" />
-                    Hệ Thống & Quét Giá
+                    {t('settings.tabSystem')}
                   </span>
                 ),
                 children: (
@@ -312,37 +312,37 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     {/* Bot Status Switch */}
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-semibold text-slate-800 dark:text-white">Trạng thái Quét Tự động</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Bật hoặc tạm dừng toàn bộ scheduler</div>
+                        <div className="text-sm font-semibold text-slate-800 dark:text-white">{t('settings.botStatus')}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t('settings.botStatusDesc')}</div>
                       </div>
                       <Form.Item name="bot_status" valuePropName="checked" noStyle>
-                        <Switch checkedChildren="RUNNING" unCheckedChildren="PAUSED" />
+                        <Switch checkedChildren={BOT_STATUS.RUNNING} unCheckedChildren={BOT_STATUS.PAUSED} />
                       </Form.Item>
                     </div>
 
                     {/* Trade Hours Only Switch */}
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                       <div className="pr-4">
-                        <div className="text-sm font-semibold text-slate-800 dark:text-white">Chỉ Quét Trong Giờ Giao Dịch</div>
+                        <div className="text-sm font-semibold text-slate-800 dark:text-white">{t('settings.tradeHours')}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Chỉ chạy crawler vào: 09:00 - 11:30 & 13:00 - 15:00 (T2 - T6). Tạm nghỉ vào buổi tối, giờ nghỉ trưa & cuối tuần.
+                          {t('settings.tradeHoursDesc')}
                         </div>
                       </div>
                       <Form.Item name="trade_hours_only" valuePropName="checked" noStyle>
-                        <Switch checkedChildren="BẬT" unCheckedChildren="TẮT" />
+                        <Switch checkedChildren="ON" unCheckedChildren="OFF" />
                       </Form.Item>
                     </div>
 
                     {/* Polling Interval */}
                     <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
                       <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400 font-semibold text-xs uppercase">
-                        <Clock className="w-4 h-4" /> Chu kỳ Quét Giá (Dynamic Polling)
+                        <Clock className="w-4 h-4" /> {t('settings.pollingSec')}
                       </div>
                       <Form.Item
                         name="polling_interval_sec"
-                        label={<span className="text-xs font-medium">Khoảng thời gian giữa 2 lần quét (giây)</span>}
-                        rules={[{ required: true, message: 'Nhập thời gian quét từ 5 đến 3600 giây' }]}
-                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Thay đổi sẽ áp dụng ngay tức thì (Hot-reload) mà không cần restart backend.</span>}
+                        label={<span className="text-xs font-medium">{t('settings.pollingSecLabel')}</span>}
+                        rules={[{ required: true, message: '5 - 3600' }]}
+                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">{t('settings.pollingSecHelp')}</span>}
                       >
                         <InputNumber
                           min={5}
@@ -356,13 +356,13 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     {/* Anti-spam Cooldown */}
                     <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl" bodyStyle={{ padding: '14px' }}>
                       <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-semibold text-xs uppercase">
-                        <ShieldAlert className="w-4 h-4" /> Chống Spam Cảnh Báo (Cooldown)
+                        <ShieldAlert className="w-4 h-4" /> {t('settings.cooldown')}
                       </div>
                       <Form.Item
                         name="alert_cooldown_min"
-                        label={<span className="text-xs font-medium">Thời gian chờ giữa 2 cảnh báo cùng loại cho 1 mã (phút)</span>}
-                        rules={[{ required: true, message: 'Nhập thời gian cooldown từ 1 đến 1440 phút' }]}
-                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Tránh tràn ngập tin nhắn Telegram khi giá dao động quanh mốc TP/SL.</span>}
+                        label={<span className="text-xs font-medium">{t('settings.cooldownLabel')}</span>}
+                        rules={[{ required: true, message: '1 - 1440' }]}
+                        help={<span className="text-[11px] text-slate-500 dark:text-slate-400">{t('settings.cooldownHelp')}</span>}
                       >
                         <InputNumber
                           min={1}
@@ -382,7 +382,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             label: (
               <span className="flex items-center gap-1.5 font-semibold text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                AI Engine & API Key
+                {t('settings.tabAi')}
               </span>
             ),
             children: (
@@ -493,6 +493,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       placeholder={userAIConfig?.gemini_api_key_set ? "****************" : "Dán Gemini API Key (AIzaSy...)"}
                       className="font-mono text-xs"
                       allowClear
+                      autoComplete="new-password"
+                      spellCheck={false}
                     />
                     <div className="text-[10px] text-slate-400">
                       Hỗ trợ các model tốc độ cao: <code className="text-amber-600 font-mono">gemini-2.5-flash</code>, <code className="text-amber-600 font-mono">gemini-1.5-flash</code>, <code className="text-amber-600 font-mono">gemini-2.5-pro</code>.
@@ -547,6 +549,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       placeholder={userAIConfig?.openai_api_key_set ? "****************" : "Dán OpenAI API Key (sk-...)"}
                       className="font-mono text-xs"
                       allowClear
+                      autoComplete="new-password"
+                      spellCheck={false}
                     />
                     <div className="text-[10px] text-slate-400">
                       Hỗ trợ: <code className="text-emerald-600 font-mono">gpt-4o-mini</code> (nhanh & tiết kiệm), <code className="text-emerald-600 font-mono">gpt-4o</code>, <code className="text-emerald-600 font-mono">o3-mini</code>.
@@ -591,6 +595,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         placeholder="Để trống nếu chưa dùng (VD: http://localhost:11434/v1)"
                         className="font-mono text-xs"
                         allowClear
+                        autoComplete="off"
+                        spellCheck={false}
                       />
                       <div className="text-[10px] text-slate-400 mt-1">
                         Mặc định Ollama: <code className="text-blue-500 font-mono">http://localhost:11434/v1</code> • LM Studio: <code className="text-blue-500 font-mono">http://localhost:1234/v1</code>
@@ -607,6 +613,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         placeholder={userAIConfig?.local_ai_api_key_set ? "****************" : "Bỏ trống nếu không yêu cầu mật khẩu"}
                         className="font-mono text-xs"
                         allowClear
+                        autoComplete="new-password"
+                        spellCheck={false}
                       />
                     </div>
                   </div>
@@ -675,6 +683,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   >
                     <Input.Password
                       placeholder="Nhập Bot Token mới nếu muốn cập nhật..."
+                      autoComplete="new-password"
+                      spellCheck={false}
                     />
                   </Form.Item>
                 </Card>
@@ -706,6 +716,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       placeholder="Nhập ID cá nhân (VD: 123456789) hoặc Group ID (VD: -100123456789)"
                       className="mono-font text-xs"
                       allowClear
+                      autoComplete="off"
+                      spellCheck={false}
                     />
                   </Form.Item>
 
@@ -801,6 +813,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       placeholder="Nhập ID cá nhân (VD: 123456789)"
                       className="mono-font text-xs"
                       allowClear
+                      autoComplete="off"
+                      spellCheck={false}
                     />
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       Dãy số ID tài khoản cá nhân Telegram để bot gửi thông báo trực tiếp.

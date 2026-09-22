@@ -57,3 +57,21 @@ export const BOT_STATUS = {
   RUNNING: 'RUNNING',
   PAUSED: 'PAUSED',
 } as const;
+
+export const SCREENER_SIGNAL_TYPES = {
+  VOLUME_BREAKOUT: 'VOLUME_BREAKOUT',
+  RSI_OVERSOLD_REBOUND: 'RSI_OVERSOLD_REBOUND',
+  MA20_BREAKOUT: 'MA20_BREAKOUT',
+} as const;
+
+export const SIGNAL_STRENGTH = {
+  STRONG: 'STRONG',
+  NORMAL: 'NORMAL',
+} as const;
+
+export const EXCHANGES = {
+  HOSE: 'HOSE',
+  HNX: 'HNX',
+  UPCOM: 'UPCOM',
+} as const;
+

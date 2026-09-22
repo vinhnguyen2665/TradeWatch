@@ -749,7 +749,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             name="telegram_chat_id"
             label={<span className="text-xs font-semibold">{t('auth.telegramChatId')}</span>}
           >
-            <Input placeholder="VD: 123456789" />
+            <Input placeholder="VD: 123456789" autoComplete="off" spellCheck={false} />
           </Form.Item>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -824,7 +824,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             name="telegram_chat_id"
             label={<span className="text-xs font-semibold">{t('auth.telegramChatId')}</span>}
           >
-            <Input placeholder="Telegram Chat ID" />
+            <Input placeholder="Telegram Chat ID" autoComplete="off" spellCheck={false} />
           </Form.Item>
 
           <Form.Item

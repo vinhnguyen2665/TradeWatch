@@ -13,6 +13,7 @@ import {
 import { ScreenerSignal } from '../types';
 import { getScreenerSuggestions } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { SCREENER_SIGNAL_TYPES, SIGNAL_STRENGTH, EXCHANGES } from '../constants';
 
 interface ScreenerModalProps {
   visible: boolean;
@@ -58,7 +59,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="font-extrabold text-slate-900 dark:text-white mono-font text-base">{ticker}</span>
             <Tag color="blue" className="text-[10px] px-1 py-0 border-0">
-              {record.exchange || 'HOSE'}
+              {record.exchange || EXCHANGES.HOSE}
             </Tag>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px]">{record.name}</span>
@@ -130,15 +131,15 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
       key: 'reason',
       render: (_, record: ScreenerSignal) => {
         let icon = <Zap className="w-3.5 h-3.5 mr-1" />;
-        let label = 'TÍN HIỆU';
+        let label = t('screener.colSignal');
 
-        if (record.signal_type === 'VOLUME_BREAKOUT') {
+        if (record.signal_type === SCREENER_SIGNAL_TYPES.VOLUME_BREAKOUT) {
           icon = <Flame className="w-3.5 h-3.5 mr-1 text-orange-500" />;
           label = t('screener.breakoutSignal');
-        } else if (record.signal_type === 'RSI_OVERSOLD_REBOUND') {
+        } else if (record.signal_type === SCREENER_SIGNAL_TYPES.RSI_OVERSOLD_REBOUND) {
           icon = <Activity className="w-3.5 h-3.5 mr-1 text-purple-500" />;
           label = t('screener.oversoldSignal');
-        } else if (record.signal_type === 'MA20_BREAKOUT') {
+        } else if (record.signal_type === SCREENER_SIGNAL_TYPES.MA20_BREAKOUT) {
           icon = <TrendingUp className="w-3.5 h-3.5 mr-1 text-cyan-500" />;
           label = t('screener.goldenCrossSignal');
         }
@@ -149,7 +150,7 @@ export const ScreenerModal: React.FC<ScreenerModalProps> = ({
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">
                 {icon} {label}
               </span>
-              {record.signal_strength === 'STRONG' && (
+              {record.signal_strength === SIGNAL_STRENGTH.STRONG && (
                 <Tag color="red" className="text-[10px] px-1 font-extrabold border-0 animate-pulse">
                   STRONG
                 </Tag>

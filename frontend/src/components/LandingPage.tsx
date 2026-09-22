@@ -67,39 +67,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const features = [
     {
       icon: <Zap className="w-6 h-6 text-amber-500" />,
-      title: 'Tốc độ Quét Real-time Cực Nhanh',
-      description: 'Kết nối trực tiếp API bảng giá Sở Giao Dịch (HOSE, HNX, UPCoM) qua Async I/O (httpx). Không dùng Browser ngốn RAM, phản hồi mili-giây.',
-      badge: 'Zero-Browser',
+      title: t('landing.feat1Title'),
+      description: t('landing.feat1Desc'),
+      badge: t('landing.feat1Badge'),
     },
     {
       icon: <Send className="w-6 h-6 text-blue-500" />,
-      title: 'Cảnh báo Telegram Cá Nhân Hoá',
-      description: 'Tự động tính toán PnL thời gian thực, bắn tin nhắn cảnh báo Chốt lời (TP) và Cắt lỗ (SL) tức thì tới Telegram Chat ID riêng của bạn kèm cơ chế chống spam.',
-      badge: 'Anti-Spam Cooldown',
+      title: t('landing.feat2Title'),
+      description: t('landing.feat2Desc'),
+      badge: t('landing.feat2Badge'),
     },
     {
       icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
-      title: 'Gợi ý Tín hiệu Kỹ thuật',
-      description: 'Tự động phân tích đột biến khối lượng (Volume Breakout), điểm đảo chiều RSI quá bán và điểm cắt MA20 để đề xuất các cơ hội vào lệnh tiềm năng.',
-      badge: 'Smart Screener',
+      title: t('landing.feat3Title'),
+      description: t('landing.feat3Desc'),
+      badge: t('landing.feat3Badge'),
     },
     {
       icon: <Lock className="w-6 h-6 text-emerald-500" />,
-      title: 'Bảo mật & Cô lập Danh mục',
-      description: 'Mỗi nhà đầu tư sở hữu danh mục và ngưỡng TP/SL hoàn toàn riêng biệt được bảo vệ bằng chuẩn mã hoá mật khẩu Bcrypt và JWT Access Token.',
-      badge: 'Multi-Tenant',
+      title: t('landing.feat4Title'),
+      description: t('landing.feat4Desc'),
+      badge: t('landing.feat4Badge'),
     },
     {
       icon: <Clock className="w-6 h-6 text-cyan-500" />,
-      title: 'Tự Động Theo Giờ Giao Dịch',
-      description: 'Hệ thống thông minh tự nhận diện phiên sáng (09:00 - 11:30), giờ nghỉ trưa (11:30 - 13:00) và phiên chiều (13:00 - 15:00) theo múi giờ chuẩn VN (UTC+7).',
-      badge: 'Market Hours Aware',
+      title: t('landing.feat5Title'),
+      description: t('landing.feat5Desc'),
+      badge: t('landing.feat5Badge'),
     },
     {
       icon: <Layers className="w-6 h-6 text-rose-500" />,
-      title: 'Lịch sử Biến động & Chart Nến',
-      description: 'Lưu trữ toàn bộ chuỗi thời gian giá theo chu kỳ với Composite Indexing, trực quan hoá biến động giá qua biểu đồ phân tích chuyên sâu.',
-      badge: 'Composite Indexed',
+      title: t('landing.feat6Title'),
+      description: t('landing.feat6Desc'),
+      badge: t('landing.feat6Badge'),
     },
   ];
 
@@ -173,18 +173,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 sm:space-y-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-400 text-xs font-semibold shadow-sm">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Nền tảng Giám sát & Quản trị Rủi ro Danh mục Chứng khoán VN 24/7</span>
+            <span>{t('landing.heroBadge')}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-tight sm:leading-tight">
+            <span>{t('landing.heroTitlePrefix')} </span>
             <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">
-              Giám sát Danh mục Chứng khoán
+              {t('landing.heroTitleHighlight')}
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Hệ thống thu thập giá khớp lệnh trực tiếp từ sàn <b>HOSE, HNX, UPCoM</b> với tốc độ mili-giây.
-            Tự động theo dõi ngưỡng <b>Chốt lời (TP)</b> & <b>Cắt lỗ (SL)</b> riêng biệt cho từng nhà đầu tư.
+            {t('landing.heroDesc')}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -195,14 +195,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               icon={<ArrowRight className="w-4 h-4" />}
               className="h-12 px-8 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold shadow-xl shadow-blue-600/30 flex items-center gap-2 text-base"
             >
-              Tạo Tài Khoản Ngay
+              {t('landing.createAccountBtn')}
             </Button>
             <Button
               size="large"
               onClick={() => openAuth('login')}
               className="h-12 px-6 rounded-xl border-slate-300 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-blue-500 bg-white dark:bg-slate-900 text-base"
             >
-              Trải Nghiệm Bản Demo
+              {t('landing.demoBtn')}
             </Button>
           </div>
 
@@ -213,10 +213,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                    BẢNG THEO DÕI REALTIME (HOSE / HNX / UPCOM)
+                    {t('landing.liveBoardTitle')}
                   </span>
                 </div>
-                <Tag color="blue" className="text-[11px] font-semibold">Tự động quét định kỳ</Tag>
+                <Tag color="blue" className="text-[11px] font-semibold">{t('landing.autoScan')}</Tag>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -249,10 +249,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-3">
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Tính Năng Vượt Trội Cho Nhà Đầu Tư
+              {t('landing.featureSectionTitle')}
             </h2>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-              Thiết kế chuyên biệt cho thị trường chứng khoán Việt Nam, tối ưu hiệu năng và độ ổn định cao nhất.
+              {t('landing.featureSectionDesc')}
             </p>
           </div>
 
@@ -291,10 +291,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 text-white shadow-2xl text-center space-y-6 relative overflow-hidden">
             <h2 className="text-2xl sm:text-4xl font-black">
-              Sẵn sàng làm chủ danh mục chứng khoán của bạn?
+              {t('landing.ctaTitle')}
             </h2>
             <p className="text-sm sm:text-base text-blue-100 max-w-xl mx-auto">
-              Đăng ký tài khoản hoàn toàn miễn phí và bắt đầu nhận cảnh báo chốt lời/cắt lỗ Telegram tự động ngay hôm nay.
+              {t('landing.ctaDesc')}
             </p>
             <div className="pt-2">
               <Button
@@ -302,7 +302,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 onClick={() => openAuth('register')}
                 className="h-12 px-8 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-extrabold shadow-lg border-0 text-base"
               >
-                Đăng Ký Tài Khoản Miễn Phí
+                {t('landing.ctaRegisterBtn')}
               </Button>
             </div>
           </div>
@@ -314,10 +314,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300">
             <TrendingUp className="w-4 h-4 text-blue-600" />
-            <span>TradeWatch Pro • Vietnam Stock Monitoring System</span>
+            <span>TradeWatch Pro • {t('landing.footerTagline')}</span>
           </div>
           <div>
-            © {new Date().getFullYear()} TradeWatch. Múi giờ UTC+7 (Asia/Ho_Chi_Minh).
+            © {new Date().getFullYear()} TradeWatch. {t('landing.footerTimezone')}.
           </div>
         </div>
       </footer>
