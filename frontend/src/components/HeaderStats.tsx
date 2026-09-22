@@ -105,8 +105,8 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                 color={isRunning ? '#10B981' : '#64748B'}
                 text={
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isRunning
-                      ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                     }`}>
                     {isRunning ? 'BOT RUNNING' : 'BOT PAUSED'}
                   </span>
@@ -127,11 +127,10 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
                     </div>
                   }
                 >
-                  <span className={`cursor-help text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border transition-all ${
-                    summary.market_status.is_open
-                      ? 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700/60 animate-pulse'
-                      : 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700/60'
-                  }`}>
+                  <span className={`cursor-help text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border transition-all ${summary.market_status.is_open
+                    ? 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700/60 animate-pulse'
+                    : 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700/60'
+                    }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${summary.market_status.is_open ? 'bg-blue-600 dark:bg-blue-400' : 'bg-amber-500'}`}></span>
                     <span>{summary.market_status.session_name}</span>
                   </span>
@@ -188,7 +187,7 @@ export const HeaderStats: React.FC<HeaderStatsProps> = ({
             onClick={onOpenScreener}
             className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/30 hover:border-amber-400 bg-amber-50 dark:bg-amber-950/20 font-medium"
           >
-            Gợi ý Mã Kỹ thuật
+            Gợi ý mã CP
           </Button>
 
           <Button
