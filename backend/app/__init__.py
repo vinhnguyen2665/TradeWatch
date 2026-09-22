@@ -1,0 +1,1 @@
+"""TradeWatch backend application package."""

@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom smooth scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94A3B8;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0F172A;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748B;
+}
+
+/* Ant Design Global Overrides */
+.ant-table-wrapper .ant-table {
+  background: transparent !important;
+}
+
+.dark .ant-modal-content, .dark .ant-drawer-content {
+  background-color: #111827 !important;
+  border: 1px solid #1E293B !important;
+}
+
+.dark .ant-card {
+  background-color: #111827 !important;
+  border-color: #1E293B !important;
+}
+
+.mono-font {
+  font-family: 'JetBrains Mono', monospace;
+}
