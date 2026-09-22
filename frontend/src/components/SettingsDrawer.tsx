@@ -151,8 +151,8 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         }
       }
     } catch (err) {
-      console.error('Lỗi khi tải cài đặt:', err);
-      message.error('Không thể tải dữ liệu cài đặt');
+      console.error('Error loading settings:', err);
+      message.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -391,10 +391,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <div className="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-xs text-indigo-900 dark:text-indigo-300">
                   <div className="flex items-center gap-1.5 font-bold mb-1">
                     <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                    Quản lý API Key & Engine AI Cá Nhân
+                    {t('settings.aiCalloutTitle')}
                   </div>
                   <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80 leading-relaxed">
-                    Mỗi tài khoản lưu trữ API Key riêng biệt trong cơ sở dữ liệu để tự quản lý quota và đảm bảo an toàn. Khi đã lưu, key được mã hóa và ẩn dưới dạng <code className="font-mono bg-indigo-100 dark:bg-indigo-900/50 px-1 py-0.5 rounded">****************</code>.
+                    {t('settings.aiCalloutDesc')}{' '}
+                    <code className="font-mono bg-indigo-100 dark:bg-indigo-900/50 px-1 py-0.5 rounded">****************</code>.
                   </p>
                 </div>
 
@@ -402,7 +403,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Chọn AI Engine Mặc Định:
+                      {t('settings.selectDefaultEngine')}
                     </span>
                     <Tag color={aiProvider === 'gemini' ? 'gold' : aiProvider === 'openai' ? 'green' : 'blue'}>
                       {aiProvider === 'gemini' ? 'Google Gemini' : aiProvider === 'openai' ? 'OpenAI ChatGPT' : 'Local AI'}
@@ -458,16 +459,16 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-amber-500" />
                       <span className="font-bold text-xs uppercase text-slate-800 dark:text-slate-200">
-                        1. Google Gemini AI (Miễn Phí)
+                        {t('settings.geminiTitle')}
                       </span>
                     </div>
                     {userAIConfig?.gemini_api_key_set ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> ĐÃ CẤU HÌNH KEY
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.keyConfigured')}
                       </Tag>
                     ) : (
                       <Tag color="default" className="text-[10px] font-bold m-0">
-                        CHƯA CÓ KEY
+                        {t('settings.noKey')}
                       </Tag>
                     )}
                   </div>
@@ -475,7 +476,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                        Gemini API Key
+                        {t('settings.geminiKeyLabel')}
                       </span>
                       <a
                         href="https://aistudio.google.com/app/apikey"
@@ -483,21 +484,21 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         rel="noreferrer"
                         className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
-                        Lấy Key tại Google AI Studio <ExternalLink className="w-3 h-3" />
+                        {t('settings.geminiLinkText')} <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <Input.Password
                       ref={geminiInputRef}
                       value={geminiKeyInput}
                       onChange={(e) => setGeminiKeyInput(e.target.value)}
-                      placeholder={userAIConfig?.gemini_api_key_set ? "****************" : "Dán Gemini API Key (AIzaSy...)"}
+                      placeholder={userAIConfig?.gemini_api_key_set ? "****************" : t('settings.geminiPlaceholder')}
                       className="font-mono text-xs"
                       allowClear
                       autoComplete="new-password"
                       spellCheck={false}
                     />
                     <div className="text-[10px] text-slate-400">
-                      Hỗ trợ các model tốc độ cao: <code className="text-amber-600 font-mono">gemini-2.5-flash</code>, <code className="text-amber-600 font-mono">gemini-1.5-flash</code>, <code className="text-amber-600 font-mono">gemini-2.5-pro</code>.
+                      {t('settings.geminiSupportedModels')} <code className="text-amber-600 font-mono">gemini-2.5-flash</code>, <code className="text-amber-600 font-mono">gemini-1.5-flash</code>, <code className="text-amber-600 font-mono">gemini-2.5-pro</code>.
                     </div>
                   </div>
                 </Card>
@@ -514,16 +515,16 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <div className="flex items-center gap-2">
                       <Bot className="w-4 h-4 text-emerald-500" />
                       <span className="font-bold text-xs uppercase text-slate-800 dark:text-slate-200">
-                        2. OpenAI ChatGPT (Chính Thức)
+                        {t('settings.openaiTitle')}
                       </span>
                     </div>
                     {userAIConfig?.openai_api_key_set ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> ĐÃ CẤU HÌNH KEY
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.keyConfigured')}
                       </Tag>
                     ) : (
                       <Tag color="default" className="text-[10px] font-bold m-0">
-                        CHƯA CÓ KEY
+                        {t('settings.noKey')}
                       </Tag>
                     )}
                   </div>
@@ -531,7 +532,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                        OpenAI API Key
+                        {t('settings.openaiKeyLabel')}
                       </span>
                       <a
                         href="https://platform.openai.com/api-keys"
@@ -539,21 +540,21 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         rel="noreferrer"
                         className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
-                        Quản lý Key tại OpenAI Platform <ExternalLink className="w-3 h-3" />
+                        {t('settings.openaiLinkText')} <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <Input.Password
                       ref={openaiInputRef}
                       value={openaiKeyInput}
                       onChange={(e) => setOpenaiKeyInput(e.target.value)}
-                      placeholder={userAIConfig?.openai_api_key_set ? "****************" : "Dán OpenAI API Key (sk-...)"}
+                      placeholder={userAIConfig?.openai_api_key_set ? "****************" : t('settings.openaiPlaceholder')}
                       className="font-mono text-xs"
                       allowClear
                       autoComplete="new-password"
                       spellCheck={false}
                     />
                     <div className="text-[10px] text-slate-400">
-                      Hỗ trợ: <code className="text-emerald-600 font-mono">gpt-4o-mini</code> (nhanh & tiết kiệm), <code className="text-emerald-600 font-mono">gpt-4o</code>, <code className="text-emerald-600 font-mono">o3-mini</code>.
+                      {t('settings.openaiSupportedModels')} <code className="text-emerald-600 font-mono">gpt-4o-mini</code> {t('settings.openaiFast')}, <code className="text-emerald-600 font-mono">gpt-4o</code>, <code className="text-emerald-600 font-mono">o3-mini</code>.
                     </div>
                   </div>
                 </Card>
@@ -570,16 +571,16 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     <div className="flex items-center gap-2">
                       <Server className="w-4 h-4 text-blue-500" />
                       <span className="font-bold text-xs uppercase text-slate-800 dark:text-slate-200">
-                        3. Local AI (Ollama / LM Studio)
+                        {t('settings.localAiTitle')}
                       </span>
                     </div>
                     {userAIConfig?.local_ai_base_url ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> ĐÃ CẤU HÌNH
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.configured')}
                       </Tag>
                     ) : (
                       <Tag color="default" className="text-[10px] font-bold m-0">
-                        CHƯA CẤU HÌNH
+                        {t('settings.notConfigured')}
                       </Tag>
                     )}
                   </div>
@@ -587,30 +588,30 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   <div className="space-y-2">
                     <div>
                       <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                        Endpoint Base URL (OpenAI-compatible)
+                        {t('settings.localAiUrlLabel')}
                       </span>
                       <Input
                         value={localBaseUrlInput}
                         onChange={(e) => setLocalBaseUrlInput(e.target.value)}
-                        placeholder="Để trống nếu chưa dùng (VD: http://localhost:11434/v1)"
+                        placeholder={t('settings.localAiUrlPlaceholder')}
                         className="font-mono text-xs"
                         allowClear
                         autoComplete="off"
                         spellCheck={false}
                       />
                       <div className="text-[10px] text-slate-400 mt-1">
-                        Mặc định Ollama: <code className="text-blue-500 font-mono">http://localhost:11434/v1</code> • LM Studio: <code className="text-blue-500 font-mono">http://localhost:1234/v1</code>
+                        {t('settings.localAiDefaultHint')} <code className="text-blue-500 font-mono">http://localhost:11434/v1</code> • {t('settings.localAiLmHint')} <code className="text-blue-500 font-mono">http://localhost:1234/v1</code>
                       </div>
                     </div>
 
                     <div>
                       <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                        Local API Key (Tùy chọn)
+                        {t('settings.localAiKeyLabel')}
                       </span>
                       <Input.Password
                         value={localKeyInput}
                         onChange={(e) => setLocalKeyInput(e.target.value)}
-                        placeholder={userAIConfig?.local_ai_api_key_set ? "****************" : "Bỏ trống nếu không yêu cầu mật khẩu"}
+                        placeholder={userAIConfig?.local_ai_api_key_set ? "****************" : t('settings.localAiKeyPlaceholder')}
                         className="font-mono text-xs"
                         allowClear
                         autoComplete="new-password"
@@ -627,7 +628,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             label: (
               <span className="flex items-center gap-1.5 font-semibold text-xs">
                 <Send className="w-3.5 h-3.5 text-emerald-500" />
-                {isAdmin ? 'Telegram Bot & Cảnh Báo' : 'Telegram Cảnh Báo'}
+                {isAdmin ? t('settings.tabTelegramAdmin') : t('settings.tabTelegramUser')}
               </span>
             ),
             children: isAdmin ? (
@@ -643,7 +644,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       <Send className="w-5 h-5 text-emerald-300" />
                     </div>
                     <div>
-                      <div className="text-xs text-emerald-200 font-medium">Bot Cảnh Báo TradeWatch Hệ Thống:</div>
+                      <div className="text-xs text-emerald-200 font-medium">{t('settings.botBannerSystem')}</div>
                       <div className="text-sm font-bold font-mono text-white flex items-center gap-1.5">
                         @trade_zero9vn_bot
                       </div>
@@ -655,7 +656,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow transition-colors shrink-0"
                   >
-                    Mở Bot & Bấm Start <ExternalLink className="w-3.5 h-3.5" />
+                    {t('settings.openBotBtn')} <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
 
@@ -663,15 +664,15 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
-                      <Key className="w-4 h-4" /> 1. Telegram Bot Token (Hệ Thống)
+                      <Key className="w-4 h-4" /> {t('settings.botTokenTitle')}
                     </div>
                     {settingsData?.telegram_bot_token_set ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> TOKEN ĐÃ CẤU HÌNH
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.tokenConfigured')}
                       </Tag>
                     ) : (
                       <Tag color="warning" className="text-[10px] font-bold m-0">
-                        CHƯA CÓ TOKEN
+                        {t('settings.noToken')}
                       </Tag>
                     )}
                   </div>
@@ -679,10 +680,10 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   <Form.Item
                     name="telegram_bot_token"
                     label={<span className="text-xs font-medium">Telegram Bot Token</span>}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Lấy từ @BotFather trên Telegram (VD: 123456789:ABCdef...). Để trống nếu không muốn đổi.</span>}
+                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">{t('settings.botTokenHelp')}</span>}
                   >
                     <Input.Password
-                      placeholder="Nhập Bot Token mới nếu muốn cập nhật..."
+                      placeholder={t('settings.botTokenPlaceholder')}
                       autoComplete="new-password"
                       spellCheck={false}
                     />
@@ -693,27 +694,27 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
-                      <Send className="w-4 h-4" /> 2. Telegram Chat ID / Group ID Hệ Thống
+                      <Send className="w-4 h-4" /> {t('settings.tgSystemTitle')}
                     </div>
                     {(adminChatIdWatch || form.getFieldValue('telegram_chat_id')) ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> ĐÃ GÁN ID: {adminChatIdWatch || form.getFieldValue('telegram_chat_id')}
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.tgIdBound')} {adminChatIdWatch || form.getFieldValue('telegram_chat_id')}
                       </Tag>
                     ) : (
                       <Tag color="warning" className="text-[10px] font-bold m-0">
-                        CHƯA GÁN CHAT ID
+                        {t('settings.tgIdUnbound')}
                       </Tag>
                     )}
                   </div>
 
                   <Form.Item
                     name="telegram_chat_id"
-                    label={<span className="text-xs font-medium">Telegram Chat ID / Group ID:</span>}
+                    label={<span className="text-xs font-medium">{t('settings.tgSystemLabel')}</span>}
                     rules={[{ required: false }]}
-                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">Dãy số ID tài khoản cá nhân Quản Trị Viên hoặc Group ID (bắt đầu bằng -100...) để nhận thông báo.</span>}
+                    help={<span className="text-[11px] text-slate-500 dark:text-slate-400">{t('settings.tgSystemHelp')}</span>}
                   >
                     <Input
-                      placeholder="Nhập ID cá nhân (VD: 123456789) hoặc Group ID (VD: -100123456789)"
+                      placeholder={t('settings.tgSystemPlaceholder')}
                       className="mono-font text-xs"
                       allowClear
                       autoComplete="off"
@@ -724,27 +725,27 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   {/* Step by step guide identical to user */}
                   <div className="p-3.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-2.5 mt-2">
                     <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                      <HelpCircle className="w-4 h-4" /> Hướng dẫn 3 bước để nhận tin nhắn từ @trade_zero9vn_bot:
+                      <HelpCircle className="w-4 h-4" /> {t('settings.tgGuideTitle')}
                     </div>
                     <div className="space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
                         <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
                         <div>
-                          <b>Bắt buộc kích hoạt Bot:</b> Mở Telegram và bấm <b>Start</b> (<code className="font-mono text-emerald-600 dark:text-emerald-400">/start</code>) với bot <a href="https://t.me/trade_zero9vn_bot" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline font-mono inline-flex items-center gap-0.5">@trade_zero9vn_bot <ExternalLink className="w-3 h-3 inline" /></a> (hoặc thêm bot vào Group và cấp quyền Admin).
+                          {t('settings.tgStep1Admin')}
                         </div>
                       </div>
 
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
                         <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
                         <div>
-                          <b>Lấy Chat ID / Group ID:</b> Chat với bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@userinfobot</a> hoặc <a href="https://t.me/RawDataBot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@RawDataBot</a> &rarr; Bấm <b>Start</b> (hoặc thêm bot vào group) để lấy dãy số <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-600 dark:text-blue-400">Id</code> (Cá nhân: <code className="font-mono">987654321</code>, Group: <code className="font-mono">-100123456789</code>).
+                          {t('settings.tgStep2Admin')}
                         </div>
                       </div>
 
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
                         <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
                         <div>
-                          <b>Lưu & Kiểm tra:</b> Dán ID vào ô bên trên, bấm <b>"Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot"</b> để xác nhận và bấm <b>"Lưu Cài Đặt"</b> ở góc trên.
+                          {t('settings.tgStep3Admin')}
                         </div>
                       </div>
                     </div>
@@ -758,7 +759,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     loading={testingTelegram}
                     className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-semibold"
                   >
-                    Gửi Tin Nhắn Cảnh Báo Thử Nghiệm Từ @trade_zero9vn_bot
+                    {t('settings.testAlertBtnSystem')}
                   </Button>
                 </Card>
               </Form>
@@ -771,7 +772,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       <Send className="w-5 h-5 text-emerald-300" />
                     </div>
                     <div>
-                      <div className="text-xs text-emerald-200 font-medium">Bot Cảnh Báo TradeWatch:</div>
+                      <div className="text-xs text-emerald-200 font-medium">{t('settings.botBannerUser')}</div>
                       <div className="text-sm font-bold font-mono text-white flex items-center gap-1.5">
                         @trade_zero9vn_bot
                       </div>
@@ -783,68 +784,68 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow transition-colors shrink-0"
                   >
-                    Mở Bot & Bấm Start <ExternalLink className="w-3.5 h-3.5" />
+                    {t('settings.openBotBtn')} <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
 
                 <Card className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl space-y-3" bodyStyle={{ padding: '16px' }}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase">
-                      <Send className="w-4 h-4" /> Telegram Chat ID Cá Nhân
+                      <Send className="w-4 h-4" /> {t('settings.tgChatIdPersonal')}
                     </div>
                     {userTelegramChatId?.trim() ? (
                       <Tag color="success" className="text-[10px] font-bold m-0 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> ĐÃ GÁN ID: {userTelegramChatId}
+                        <CheckCircle2 className="w-3 h-3" /> {t('settings.tgIdBound')} {userTelegramChatId}
                       </Tag>
                     ) : (
                       <Tag color="warning" className="text-[10px] font-bold m-0">
-                        CHƯA GÁN CHAT ID
+                        {t('settings.tgIdUnbound')}
                       </Tag>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
-                      Telegram Chat ID của bạn:
+                      {t('settings.tgPersonalLabel')}
                     </label>
                     <Input
                       value={userTelegramChatId}
                       onChange={(e) => setUserTelegramChatId(e.target.value)}
-                      placeholder="Nhập ID cá nhân (VD: 123456789)"
+                      placeholder={t('settings.tgPersonalPlaceholder')}
                       className="mono-font text-xs"
                       allowClear
                       autoComplete="off"
                       spellCheck={false}
                     />
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Dãy số ID tài khoản cá nhân Telegram để bot gửi thông báo trực tiếp.
+                      {t('settings.tgPersonalHelp')}
                     </div>
                   </div>
 
                   {/* Step by step guide */}
                   <div className="p-3.5 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 space-y-2.5 mt-2">
                     <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                      <HelpCircle className="w-4 h-4" /> Hướng dẫn 3 bước để nhận tin nhắn từ @trade_zero9vn_bot:
+                      <HelpCircle className="w-4 h-4" /> {t('settings.tgGuideTitle')}
                     </div>
                     <div className="space-y-2 text-[11px] text-slate-600 dark:text-slate-300">
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
                         <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
                         <div>
-                          <b>Bắt buộc kích hoạt Bot:</b> Mở Telegram và bấm <b>Start</b> (<code className="font-mono text-emerald-600 dark:text-emerald-400">/start</code>) với bot <a href="https://t.me/trade_zero9vn_bot" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline font-mono inline-flex items-center gap-0.5">@trade_zero9vn_bot <ExternalLink className="w-3 h-3 inline" /></a> để cho phép bot gửi tin nhắn tới bạn.
+                          {t('settings.tgStep1User')}
                         </div>
                       </div>
 
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
                         <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
                         <div>
-                          <b>Lấy Chat ID cá nhân:</b> Chat với bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@userinfobot</a> hoặc <a href="https://t.me/RawDataBot" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-mono font-semibold">@RawDataBot</a> &rarr; Bấm <b>Start</b> để lấy dãy số <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-600 dark:text-blue-400">Id</code> của bạn (VD: <code className="font-mono">987654321</code>).
+                          {t('settings.tgStep2User')}
                         </div>
                       </div>
 
                       <div className="flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
                         <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
                         <div>
-                          <b>Lưu & Kiểm tra:</b> Dán ID vào ô bên trên, bấm <b>"Gửi Tin Nhắn Cảnh Báo Thử Nghiệm"</b> để xác nhận và bấm <b>"Lưu Cài Đặt"</b> ở góc trên.
+                          {t('settings.tgStep3User')}
                         </div>
                       </div>
                     </div>
@@ -858,7 +859,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     loading={testingTelegram}
                     className="text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/40 hover:border-emerald-500 hover:text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 mt-2 font-semibold"
                   >
-                    {t('settings.testAlertBtn')}
+                    {t('settings.testAlertBtnUser')}
                   </Button>
                 </Card>
               </div>

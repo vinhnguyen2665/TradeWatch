@@ -103,11 +103,11 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       setStats(data);
     } catch (err: any) {
       console.error('Failed to load admin stats:', err);
-      message.error(err.response?.data?.detail || 'Không thể tải thống kê quản trị');
+      message.error(err.response?.data?.detail || t('adminUsers.statsLoadError'));
     } finally {
       setStatsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Load Users
   const loadUsers = useCallback(async () => {
@@ -120,11 +120,11 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       setUsers(data);
     } catch (err: any) {
       console.error('Failed to load users list:', err);
-      message.error(err.response?.data?.detail || 'Không thể tải danh sách người dùng');
+      message.error(err.response?.data?.detail || t('adminUsers.usersLoadError'));
     } finally {
       setUsersLoading(false);
     }
-  }, [searchKeyword, roleFilter]);
+  }, [searchKeyword, roleFilter, t]);
 
   useEffect(() => {
     if (visible) {
@@ -138,13 +138,13 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
     setCreateSubmitting(true);
     try {
       await createAdminUser(values);
-      message.success(`Đã tạo tài khoản '${values.username}' thành công!`);
+      message.success(t('adminUsers.createSuccess', { username: values.username }));
       setCreateModalVisible(false);
       createForm.resetFields();
       loadUsers();
       loadStats();
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Lỗi khi tạo người dùng');
+      message.error(err.response?.data?.detail || t('adminUsers.createError'));
     } finally {
       setCreateSubmitting(false);
     }
@@ -178,14 +178,14 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
         payload.password = values.password.trim();
       }
       await updateAdminUser(editingUser.id, payload);
-      message.success(`Đã cập nhật thông tin người dùng '${editingUser.username}' thành công!`);
+      message.success(t('adminUsers.updateSuccess', { username: editingUser.username }));
       setEditModalVisible(false);
       setEditingUser(null);
       editForm.resetFields();
       loadUsers();
       loadStats();
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Lỗi khi cập nhật người dùng');
+      message.error(err.response?.data?.detail || t('adminUsers.updateError'));
     } finally {
       setEditSubmitting(false);
     }
@@ -195,11 +195,11 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
   const handleDeleteUser = async (record: UserAdminItem) => {
     try {
       await deleteAdminUser(record.id);
-      message.success(`Đã xóa tài khoản '${record.username}' thành công!`);
+      message.success(t('adminUsers.deleteSuccess', { username: record.username }));
       loadUsers();
       loadStats();
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Lỗi khi xóa người dùng');
+      message.error(err.response?.data?.detail || t('adminUsers.deleteError'));
     }
   };
 
@@ -304,6 +304,8 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
       title: t('adminUsers.colCreatedAt'),
       dataIndex: 'created_at',
       key: 'created_at',
+      sorter: (a: UserAdminItem, b: UserAdminItem) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+
       render: (dateStr: string) => {
         try {
           const d = new Date(dateStr);
@@ -793,7 +795,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             name="full_name"
             label={<span className="text-xs font-semibold">{t('auth.fullName')}</span>}
           >
-            <Input placeholder="Họ và tên người dùng" />
+            <Input placeholder={t('adminUsers.namePlaceholder')} />
           </Form.Item>
 
           <Form.Item
@@ -832,7 +834,7 @@ export const AdminUserManagementModal: React.FC<AdminUserManagementModalProps> =
             label={<span className="text-xs font-semibold">{t('auth.password')}</span>}
             rules={[{ min: 6, message: 'Min 6 chars' }]}
           >
-            <Input.Password placeholder="Nhập mật khẩu mới nếu muốn đổi..." />
+            <Input.Password placeholder={t('adminUsers.pwdPlaceholder')} />
           </Form.Item>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">

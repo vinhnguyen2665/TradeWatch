@@ -47,7 +47,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await login(values);
       onClose();
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.');
+      message.error(err.response?.data?.detail || t('auth.loginFail'));
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await register(values);
       onClose();
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Đăng ký thất bại. Vui lòng thử lại.');
+      message.error(err.response?.data?.detail || t('auth.registerFail'));
     } finally {
       setLoading(false);
     }

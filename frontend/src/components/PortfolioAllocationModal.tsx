@@ -107,33 +107,6 @@ const PENNY_SUGGESTIONS = [
   'TNT', 'TTF', 'FIT', 'TSC', 'HHS', 'IDJ', 'API', 'APS', 'AMV', 'MST',
 ];
 
-const ALLOCATION_PRESETS = [
-  {
-    key: 'BALANCED',
-    label: 'Chuẩn Cân Bằng (60 - 30 - 10)',
-    desc: '60% VN30 Tích sản • 30% Midcap Sóng ngành • 10% Penny T+',
-    weights: { vn30: 60, midcap: 30, penny: 10 },
-  },
-  {
-    key: 'DEFENSIVE',
-    label: 'Phòng Thủ An Toàn (70 - 20 - 10)',
-    desc: '70% VN30 An toàn • 20% Midcap • 10% Penny',
-    weights: { vn30: 70, midcap: 20, penny: 10 },
-  },
-  {
-    key: 'GROWTH',
-    label: 'Tăng Trưởng Nhanh (50 - 35 - 15)',
-    desc: '50% VN30 • 35% Midcap Bứt phá • 15% Penny',
-    weights: { vn30: 50, midcap: 35, penny: 15 },
-  },
-  {
-    key: 'AGGRESSIVE',
-    label: 'Tấn Công Chủ Động (40 - 40 - 20)',
-    desc: '40% VN30 • 40% Midcap Đón sóng • 20% Đầu cơ T+',
-    weights: { vn30: 40, midcap: 40, penny: 20 },
-  },
-];
-
 const PALETTE = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316'];
 
 export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> = ({
@@ -157,6 +130,33 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
   const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
   const [userAIConfig, setUserAIConfig] = useState<UserAIConfig | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AIProviderType>('gemini');
+
+  const ALLOCATION_PRESETS = useMemo(() => [
+    {
+      key: 'BALANCED',
+      label: t('allocation.profileBalanced'),
+      desc: t('allocation.profileBalancedDesc'),
+      weights: { vn30: 60, midcap: 30, penny: 10 },
+    },
+    {
+      key: 'DEFENSIVE',
+      label: t('allocation.profileDefensive'),
+      desc: t('allocation.profileDefensiveDesc'),
+      weights: { vn30: 70, midcap: 20, penny: 10 },
+    },
+    {
+      key: 'GROWTH',
+      label: t('allocation.profileGrowth'),
+      desc: t('allocation.profileGrowthDesc'),
+      weights: { vn30: 50, midcap: 35, penny: 15 },
+    },
+    {
+      key: 'AGGRESSIVE',
+      label: t('allocation.profileAggressive'),
+      desc: t('allocation.profileAggressiveDesc'),
+      weights: { vn30: 40, midcap: 40, penny: 20 },
+    },
+  ], [t]);
 
   // Danh sách các AI Engine đã được đăng ký key trong Cài Đặt
   const configuredProviders = useMemo(() => {
@@ -210,13 +210,13 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
   const handleDeleteHistory = async (id: number) => {
     try {
       await deleteAllocation(id);
-      message.success('Đã xóa bản ghi phân bổ thành công!');
+      message.success(t('allocation.deleteRecordSuccess'));
       fetchHistory();
       if (currentResult?.id === id) {
         getLatestAllocation().then((latest) => setCurrentResult(latest)).catch(() => null);
       }
     } catch (e: any) {
-      message.error(e?.response?.data?.detail || 'Không thể xóa bản ghi phân bổ vốn.');
+      message.error(e?.response?.data?.detail || t('allocation.deleteRecordError'));
     }
   };
 
@@ -321,7 +321,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
 
   const handleImportAllWatchedPositions = () => {
     if (!existingPositions || existingPositions.length === 0) {
-      message.info('Danh mục theo dõi của bạn hiện chưa có mã cổ phiếu nào.');
+      message.info(t('allocation.noExistingStocks'));
       return;
     }
 
@@ -350,7 +350,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       penny_tickers: newPenny,
     });
 
-    message.success(`Đã tự động phân loại và nạp ${existingPositions.length} mã đang theo dõi vào 3 nhóm!`);
+    message.success(t('allocation.autoLoadedStocks', { count: existingPositions.length }));
   };
 
   const toggleTickerInGroup = (fieldName: string, ticker: string) => {
@@ -371,7 +371,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
   const handleGenerate = async (values: any) => {
     // 1. Kiểm tra xem đã có ít nhất một AI Engine được đăng ký Key hay chưa
     if (configuredProviders.length === 0) {
-      message.warning('Tài khoản của bạn chưa đăng ký API Key cho AI Engine nào. Vui lòng mở Cài đặt để thêm API Key!');
+      message.warning(t('allocation.noEngineWarning'));
       onOpenSettings?.('ai_config');
       return;
     }
@@ -383,14 +383,14 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
 
     if (!isCurrentProvConfigured) {
       const provLabel = selectedProvider === 'gemini' ? 'Google Gemini' : selectedProvider === 'openai' ? 'OpenAI ChatGPT' : 'Local AI';
-      message.warning(`AI Engine ${provLabel} chưa được cấu hình API Key. Vui lòng vào Cài đặt để cấu hình.`);
+      message.warning(t('allocation.engineUnconfiguredWarning', { provider: provLabel }));
       onOpenSettings?.('ai_config');
       return;
     }
 
     const capital = Number(values.total_capital);
     if (!capital || capital <= 0) {
-      message.error('Vui lòng nhập tổng số vốn đầu tư hợp lệ');
+      message.error(t('allocation.invalidCapitalError'));
       return;
     }
 
@@ -399,7 +399,7 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
     const pList = (values.penny_tickers || []).map((t: string) => t.trim().toUpperCase()).filter(Boolean);
 
     if (vList.length === 0 && mList.length === 0 && pList.length === 0) {
-      message.error('Vui lòng chọn hoặc nhập ít nhất một mã cổ phiếu vào danh mục.');
+      message.error(t('allocation.noStocksSelectedError'));
       return;
     }
 
@@ -422,9 +422,9 @@ export const PortfolioAllocationModal: React.FC<PortfolioAllocationModalProps> =
       setCurrentResult(res);
       setActiveTab('result');
       fetchHistory();
-      message.success('AI đã hoàn thành kế hoạch phân bổ vốn và hoạch định danh mục thành công!');
+      message.success(t('allocation.allocationSuccess'));
     } catch (err: any) {
-      message.error(err.response?.data?.detail || 'Lỗi khi gọi dịch vụ AI để phân tích danh mục');
+      message.error(err.response?.data?.detail || t('allocation.allocationError'));
     } finally {
       setLoading(false);
     }
