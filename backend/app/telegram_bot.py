@@ -134,7 +134,8 @@ class TelegramNotifier:
         """
         # 1. Đọc cấu hình bot token và chat id
         bot_token = await self.get_setting_value(db, "telegram_bot_token")
-        target_chat_id = override_chat_id or await self.get_setting_value(db, "telegram_chat_id")
+        # target_chat_id = override_chat_id or await self.get_setting_value(db, "telegram_chat_id")
+        target_chat_id = override_chat_id or None
         cooldown_val = await self.get_setting_value(db, "alert_cooldown_min", "15")
 
         try:
